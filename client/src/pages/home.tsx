@@ -1,431 +1,119 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import logoImage from "@assets/Untitled_design_(1)_1769111819978.png";
-import {
-  Users,
-  Target,
-  FileText,
-  Megaphone,
-  MessageSquare,
-  GraduationCap,
-  Heart,
-  Stethoscope,
-  Dumbbell,
-  Factory,
-  Truck,
-  BookOpen,
-  Wheat,
-  Briefcase,
-  ChevronRight,
-  Vote,
-  Scale,
-  Building2,
-  ClipboardCheck,
-  ArrowDown,
-} from "lucide-react";
+import { useEffect } from "react";
+import { Link } from "wouter";
+import { ArrowDown, ArrowRight, ArrowUpRight, BookOpenText, CalendarDays, Globe2, Scale } from "lucide-react";
 
-const targetGroups = [
-  {
-    title: "First-Time Voters & Youth",
-    icon: Vote,
-    description: "Democracy education programmes, debates, mock elections, campus interactions, and digital civic awareness content.",
-  },
-  {
-    title: "Women & SHGs",
-    icon: Heart,
-    description: "Health awareness camps, women conclaves, entrepreneurship programmes, SHG meetings, and community consultations.",
-  },
-  {
-    title: "Anganwadi & ASHA Workers",
-    icon: Users,
-    description: "Rights awareness sessions, policy-reality dialogues, expert interactions, and structured documentation meetings.",
-  },
-  {
-    title: "Medical Students",
-    icon: Stethoscope,
-    description: "Public health forums, expert-led seminars, policy discussions, and mentorship interactions.",
-  },
-  {
-    title: "Sports Community",
-    icon: Dumbbell,
-    description: "Interactive sessions with senior players and coaches, panel discussions, skill camps, marathons, and opportunity awareness programmes.",
-  },
-  {
-    title: "Labour Unions",
-    icon: Factory,
-    description: "Reality-check workshops, income versus cost-of-living discussions, legal awareness sessions, and collective leadership-building initiatives.",
-  },
-  {
-    title: "Gig Workers",
-    icon: Truck,
-    description: "Rights awareness sessions, social security audits, accident liability discussions, and systematic documentation of worker experiences.",
-  },
-  {
-    title: "Teachers",
-    icon: BookOpen,
-    description: "Professional development forums, recognition programmes, mentorship initiatives, and education policy dialogue sessions.",
-  },
-  {
-    title: "Farmers",
-    icon: Wheat,
-    description: "Farmers' sabhas, cost-versus-income workshops, policy gap mapping sessions, and consultations with rural youth.",
-  },
-  {
-    title: "Entrepreneurs",
-    icon: Briefcase,
-    description: "Policy dialogue forums, access-to-finance workshops, peer networking platforms, and expert-led discussions.",
-  },
-];
-
-const approachItems = [
-  {
-    icon: Target,
-    title: "Focused Issue-Based Events",
-    description: "Theme-specific events centered on real civic and governance issues affecting different sections of society. Moving public engagement from slogans to substance.",
-  },
-  {
-    icon: Users,
-    title: "Targeted Community Engagement",
-    description: "Customised programmes reflecting lived realities and concerns of specific communities. Building trust and ensuring democratic participation at grassroots level.",
-  },
-  {
-    icon: MessageSquare,
-    title: "Expert-Led Public Discussions",
-    description: "Public conversations led by subject experts and experienced practitioners. Ensuring evidence-based dialogue and countering misinformation with credibility.",
-  },
-  {
-    icon: FileText,
-    title: "Documentation of Lived Experiences",
-    description: "Systematic recording of public testimonies, data points, and governance gaps. Converting lived experiences into structured evidence for accountability.",
-  },
-  {
-    icon: Megaphone,
-    title: "Digital Amplification",
-    description: "Amplifying issue-based insights through reels, explainers, and collaborations with community voices. Extending civic awareness beyond physical events.",
-  },
-];
-
-const objectiveItems = [
-  {
-    icon: Scale,
-    title: "Rights & Entitlements",
-    description: "Understanding constitutional rights and entitlements every citizen deserves.",
-  },
-  {
-    icon: Building2,
-    title: "Governance Structures",
-    description: "Learning how governance works and decisions are made at various levels.",
-  },
-  {
-    icon: ClipboardCheck,
-    title: "Public Policies",
-    description: "Exploring public policies and their intended outcomes for society.",
-  },
-  {
-    icon: Target,
-    title: "Implementation Gaps",
-    description: "Identifying gaps in implementation and failures of accountability.",
-  },
+const areas = [
+  "Political Science", "Indian Politics", "Comparative Politics", "Political Theory",
+  "Public Administration", "Public Policy", "Governance", "Constitutional Studies",
+  "Democracy and Civic Engagement", "Political Communication", "Social Justice",
+  "Caste and Social Studies", "Human Rights", "Gender and Politics", "Education and Society",
+  "Development Studies", "Local Governance", "Digital Democracy",
+  "Contemporary Social and Political Issues",
 ];
 
 export default function Home() {
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
+  useEffect(() => {
+    document.title = "JPSG — Journal of Politics, Society and Governance";
+    const description = document.querySelector('meta[name="description"]');
+    description?.setAttribute("content", "An interdisciplinary, peer-reviewed academic journal for scholarship on politics, society and governance.");
+  }, []);
   return (
-    <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b" data-testid="nav-main">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <img
-                src={logoImage}
-                alt="DOCK Logo"
-                className="h-24 w-auto"
-                data-testid="img-logo"
-              />
-            </div>
-            <div className="hidden md:flex items-center gap-2 flex-wrap">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollToSection("objective")}
-                data-testid="link-objective"
-              >
-                Objective
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollToSection("approach")}
-                data-testid="link-approach"
-              >
-                Approach
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollToSection("target-groups")}
-                data-testid="link-target-groups"
-              >
-                Target Groups
-              </Button>
-              <Button
-                onClick={() => scrollToSection("contact")}
-                data-testid="button-get-involved"
-              >
-                Get Involved
-              </Button>
-            </div>
+    <div>
+      <section className="page-wrap grid min-h-[570px] items-center gap-10 py-14 md:grid-cols-[1.25fr_.75fr] md:py-20">
+        <div className="enter">
+          <p className="eyebrow mb-6 flex items-center gap-2"><span className="inline-block h-px w-8 bg-[#a45a40]" />A scholarly forum for public life</p>
+          <h1 className="font-editorial max-w-3xl text-[clamp(3.3rem,8.5vw,7.6rem)] font-medium leading-[.91] tracking-[-.055em] text-[#213858]">Ideas for a<br /><em className="font-normal text-[#a45a40]">changing</em> society.</h1>
+          <p className="mt-7 max-w-xl text-base leading-7 text-[#565860] sm:text-lg sm:leading-8">The Journal of Politics, Society and Governance brings careful, interdisciplinary scholarship to the questions shaping democratic life, public institutions and social change.</p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link href="/current-issue" className="btn-primary inline-flex min-h-12 items-center justify-center gap-3 px-5 text-sm font-bold">Explore the current issue <ArrowRight size={16} /></Link>
+            <Link href="/submissions" className="btn-secondary inline-flex min-h-12 items-center justify-center gap-3 px-5 text-sm font-bold">For authors <ArrowUpRight size={15} /></Link>
           </div>
+          <a href="#journal-overview" className="mt-12 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.13em] text-[#77736d] no-underline hover:text-[#a45a40]"><ArrowDown size={14} /> Read about the journal</a>
         </div>
-      </nav>
+        <aside className="relative md:ml-auto md:w-full md:max-w-[360px]">
+          <div className="absolute -right-5 -top-5 h-20 w-20 border-r border-t border-[#bf8972]" aria-hidden="true" />
+          <div className="border border-[#d0c8ba] bg-[#efede6] p-6 sm:p-8">
+            <div className="flex items-center justify-between border-b border-[#d2c9bb] pb-4">
+              <span className="eyebrow">Forthcoming issue</span>
+              <span className="h-2 w-2 rounded-full bg-[#b5684d]" aria-hidden="true" />
+            </div>
+            <p className="mt-7 font-editorial text-[2.8rem] leading-none tracking-tight text-[#263c5d]">01<span className="text-[#a45a40]">/</span>01</p>
+            <h2 className="mt-4 font-editorial text-2xl font-semibold text-[#263c5d]">Volume 1, Issue 1</h2>
+            <p className="mt-1 text-sm text-[#676660]">January–March 2027</p>
+            <div className="my-6 border-t border-[#d2c9bb]" />
+            <p className="text-sm leading-6 text-[#5b5c62]">The inaugural issue is planned for 2027. Article contents and publication details will be announced when confirmed.</p>
+            <Link href="/current-issue" className="rule-link mt-6">Issue information <ArrowRight size={15} /></Link>
+          </div>
+          <p className="mt-4 text-right text-[.65rem] uppercase tracking-[.14em] text-[#868077]">Research · Reflection · Public purpose</p>
+        </aside>
+      </section>
 
-      {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden" data-testid="section-hero">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10" />
-        <div className="absolute top-20 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto">
-            <Badge variant="secondary" className="mb-6" data-testid="badge-nonprofit">
-              Non-Partisan Civic Pressure Group
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="text-hero-title">
-              Democratic Organisation for{" "}
-              <span className="text-primary">Civic Knowledge</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground mb-8 leading-relaxed max-w-3xl mx-auto" data-testid="text-hero-description">
-              Strengthening democratic awareness, constitutional values, and issue-based public engagement. 
-              DOCK functions as a bridge between citizens, experts, and public policy.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                size="lg"
-                onClick={() => scrollToSection("objective")}
-                data-testid="button-learn-more"
-              >
-                Learn More
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => scrollToSection("target-groups")}
-                data-testid="button-explore-programmes"
-              >
-                Explore Programmes
-              </Button>
+      <section className="bg-[#24395a] text-[#f6f3eb]" aria-label="Journal at a glance">
+        <div className="page-wrap grid gap-5 py-7 sm:grid-cols-2 md:grid-cols-4 md:gap-0">
+          {[
+            { icon: CalendarDays, title: "Four issues", text: "Planned annually" },
+            { icon: Globe2, title: "Open access", text: "Online publication intent" },
+            { icon: BookOpenText, title: "English", text: "Primary publication language" },
+            { icon: Scale, title: "Peer reviewed", text: "Editorial screening and review" },
+          ].map(({ icon: Icon, title, text }, index) => (
+            <div key={title} className={`flex items-center gap-4 py-2 md:px-5 ${index ? "md:border-l md:border-white/20" : ""}`}>
+              <Icon className="h-5 w-5 shrink-0 text-[#d99b7e]" strokeWidth={1.6} />
+              <div><p className="font-editorial text-lg">{title}</p><p className="text-xs text-[#d6d7da]">{text}</p></div>
             </div>
-          </div>
-        </div>
-        
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <ArrowDown className="h-6 w-6 text-muted-foreground/50" />
+          ))}
         </div>
       </section>
 
-      {/* Objective Section */}
-      <section id="objective" className="py-20 bg-card" data-testid="section-objective">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4" data-testid="badge-objective">
-              Our Mission
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" data-testid="text-objective-title">
-              Objective of DOCK
-            </h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto text-lg" data-testid="text-objective-description">
-              DOCK is dedicated to strengthening democratic awareness, constitutional values, 
-              and issue-based public engagement. We enable people to understand:
-            </p>
-          </div>
+      <section id="journal-overview" className="page-wrap grid gap-10 py-16 sm:py-24 md:grid-cols-[.8fr_1.2fr]">
+        <div>
+          <p className="eyebrow">About the journal</p>
+          <h2 className="font-editorial mt-4 max-w-sm text-4xl leading-tight tracking-[-.03em] text-[#263c5d] sm:text-5xl">Scholarship that meets the moment.</h2>
+        </div>
+        <div className="max-w-2xl">
+          <p className="font-editorial text-xl leading-8 text-[#454957] sm:text-2xl sm:leading-9">JPSG is a peer-reviewed academic journal published by the Democratic Organisation for Civic Knowledge Foundation.</p>
+          <p className="mt-5 leading-7 text-[#62616a]">We provide a platform for original research, theoretical contributions, empirical studies, policy analysis and scholarly discussion on contemporary political, social and governance issues. The journal welcomes research that deepens understanding across disciplines and connects rigorous inquiry with questions of public life.</p>
+          <Link href="/about" className="rule-link mt-6">Learn about our scope <ArrowRight size={15} /></Link>
+        </div>
+      </section>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {objectiveItems.map((item, index) => (
-              <Card key={index} className="group hover-elevate overflow-visible" data-testid={`card-objective-${index}`}>
-                <CardContent className="p-6 text-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4 group-hover:bg-primary/20 transition-colors">
-                    <item.icon className="h-7 w-7 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground text-sm">{item.description}</p>
-                </CardContent>
-              </Card>
-            ))}
+      <section className="border-y border-[#d9d2c6] bg-[#f0ede6] py-14 sm:py-20">
+        <div className="page-wrap">
+          <div className="mb-9 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div><p className="eyebrow">Areas of interest</p><h2 className="font-editorial mt-3 text-3xl text-[#263c5d] sm:text-4xl">A broad lens on public life</h2></div>
+            <Link href="/about" className="rule-link">Full journal scope <ArrowRight size={15} /></Link>
           </div>
-
-          <div className="mt-12 text-center">
-            <Card className="inline-block max-w-3xl" data-testid="card-objective-statement">
-              <CardContent className="p-8">
-                <p className="text-lg text-muted-foreground italic leading-relaxed">
-                  "Through structured engagement and evidence-based dialogue, DOCK aims to transform 
-                  civic participation from passive opinion to{" "}
-                  <span className="text-foreground font-semibold">informed democratic action</span>."
-                </p>
-              </CardContent>
-            </Card>
+          <div className="flex flex-wrap gap-2">
+            {areas.map((area, index) => <span key={area} className={`border px-3 py-2 text-[.78rem] ${index % 4 === 1 ? "border-[#b5c1cc] bg-[#e6e9e8] text-[#31435c]" : "border-[#d5ccbd] bg-[#f7f5ef] text-[#565860]"}`}>{area}</span>)}
           </div>
         </div>
       </section>
 
-      {/* Approach Section */}
-      <section id="approach" className="py-20" data-testid="section-approach">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4" data-testid="badge-approach">
-              How We Work
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" data-testid="text-approach-title">
-              Our Approach
-            </h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto text-lg" data-testid="text-approach-description">
-              DOCK adopts an issue-centred, participatory, and evidence-driven approach 
-              to civic engagement, prioritising real public concerns over rhetoric.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            {approachItems.map((item, index) => (
-              <Card key={index} className="group hover-elevate overflow-visible" data-testid={`card-approach-${index}`}>
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex flex-col sm:flex-row gap-6 items-start">
-                    <div className="flex-shrink-0">
-                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                        <item.icon className="h-7 w-7 text-primary" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                          {index + 1}
-                        </span>
-                        <h3 className="font-semibold text-xl">{item.title}</h3>
-                      </div>
-                      <p className="text-muted-foreground leading-relaxed">{item.description}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      <section className="page-wrap grid gap-8 py-16 sm:py-24 md:grid-cols-[1fr_1fr]">
+        <div className="border border-[#d6cfc2] bg-[#f0ede6] p-7 sm:p-9">
+          <div className="h-px w-12 bg-[#a45a40]" aria-hidden="true" />
+          <p className="font-editorial mt-5 text-[1.65rem] leading-[1.35] text-[#263c5d] sm:text-[2rem]">Scholarship with a public purpose.</p>
+          <p className="mt-5 text-xs uppercase tracking-[.12em] text-[#77736d]">The purpose of JPSG</p>
+        </div>
+        <div className="flex flex-col justify-center py-2 md:pl-8">
+          <p className="eyebrow">Contribute</p>
+          <h2 className="font-editorial mt-3 text-3xl leading-tight text-[#263c5d] sm:text-4xl">Bring your research into the conversation.</h2>
+          <p className="mt-4 max-w-lg leading-7 text-[#62616a]">Authors are invited to prepare original work within the journal’s scope. Review the manuscript categories, word limits, ethics guidance and double-blind review process before submission.</p>
+          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3">
+            <Link href="/author-guidelines" className="rule-link">Author guidelines <ArrowRight size={15} /></Link>
+            <Link href="/peer-review" className="rule-link">Review process <ArrowRight size={15} /></Link>
           </div>
         </div>
       </section>
 
-      {/* Target Groups Section */}
-      <section id="target-groups" className="py-20 bg-card" data-testid="section-target-groups">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4" data-testid="badge-target-groups">
-              Who We Serve
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" data-testid="text-target-groups-title">
-              Target Groups
-            </h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto text-lg" data-testid="text-target-groups-description">
-              Our engagement strategy focuses on social groups directly impacted by public policy, 
-              governance effectiveness, and service delivery outcomes.
-            </p>
+      <section className="bg-[#e8e4db]">
+        <div className="page-wrap grid gap-8 py-10 sm:py-14 md:grid-cols-[1fr_1fr] md:items-center">
+          <div><p className="eyebrow">Editorial leadership</p><h2 className="font-editorial mt-3 text-3xl text-[#263c5d]">Built for careful scholarship.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#62616a]">The editorial team supports rigorous, constructive assessment and clear publication standards. Further board appointments will be announced once confirmed.</p></div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[{ role: "Managing Editor", name: "Raghu Raja Isampalli" }, { role: "Associate Editor", name: "Dr. Priyanka Gangarapu" }].map((person) => <div key={person.role} className="border-t border-[#bdb4a7] pt-4"><p className="eyebrow">{person.role}</p><p className="font-editorial mt-2 text-xl text-[#263c5d]">{person.name}</p></div>)}
           </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {targetGroups.map((group, index) => (
-              <Card
-                key={index}
-                className="group hover-elevate overflow-visible"
-                data-testid={`card-target-group-${index}`}
-              >
-                <CardContent className="p-6">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-accent mb-4 transition-transform group-hover:scale-110">
-                    <group.icon className="h-6 w-6 text-accent-foreground" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">{group.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{group.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Link href="/editorial-board" className="rule-link md:col-start-2">Meet the editorial board <ArrowRight size={15} /></Link>
         </div>
       </section>
-
-      {/* Call to Action Section */}
-      <section id="contact" className="py-20" data-testid="section-contact">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="relative overflow-hidden" data-testid="card-cta">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10" />
-            <CardContent className="relative p-8 sm:p-12 lg:p-16 text-center">
-              <GraduationCap className="h-16 w-16 text-primary mx-auto mb-6" />
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4" data-testid="text-cta-title">
-                Join the Movement
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto text-lg mb-8" data-testid="text-cta-description">
-                Be part of a transformative civic engagement initiative. Together, we can strengthen 
-                democratic awareness and create meaningful change in our communities.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button size="lg" data-testid="button-volunteer">
-                  Become a Volunteer
-                </Button>
-                <Button size="lg" variant="outline" data-testid="button-partner">
-                  Partner With Us
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t py-12" data-testid="footer">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 flex-wrap">
-            <div className="flex items-center gap-3">
-              <img
-                src={logoImage}
-                alt="DOCK Logo"
-                className="h-20 w-auto"
-                data-testid="img-footer-logo"
-              />
-            </div>
-            <p className="text-sm text-muted-foreground text-center md:text-left" data-testid="text-copyright">
-              Democratic Organisation for Civic Knowledge. Strengthening democracy through informed participation.
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollToSection("objective")}
-                data-testid="footer-link-objective"
-              >
-                Objective
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollToSection("approach")}
-                data-testid="footer-link-approach"
-              >
-                Approach
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollToSection("target-groups")}
-                data-testid="footer-link-target-groups"
-              >
-                Groups
-              </Button>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
