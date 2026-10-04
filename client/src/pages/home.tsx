@@ -107,9 +107,9 @@ export default function Home() {
 
       <section className="bg-[#e8e4db]">
         <div className="page-wrap grid gap-8 py-10 sm:py-14 md:grid-cols-[1fr_1fr] md:items-center">
-          <div><p className="eyebrow">Editorial leadership</p><h2 className="font-editorial mt-3 text-3xl text-[#263c5d]">Built for careful scholarship.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#62616a]">The editorial team supports rigorous, constructive assessment and clear publication standards. Further board appointments will be announced once confirmed.</p></div>
+          <div><p className="eyebrow">Editorial leadership</p><h2 className="font-editorial mt-3 text-3xl text-[#263c5d]">Built for careful scholarship.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#62616a]">The editorial team supports rigorous, constructive assessment and clear publication standards. Meet our Editor-in-Chief, Managing Editor, and Editorial Board members.</p></div>
           <div className="grid gap-4 sm:grid-cols-2">
-            {[{ role: "Managing Editor", name: "Raghu Raja Isampalli" }, { role: "Associate Editor", name: "Dr. Priyanka Gangarapu" }].map((person) => <div key={person.role} className="border-t border-[#bdb4a7] pt-4"><p className="eyebrow">{person.role}</p><p className="font-editorial mt-2 text-xl text-[#263c5d]">{person.name}</p></div>)}
+            {[{ role: "Editor-in-Chief", name: "Dr. Priyanka Gangarapu" }, { role: "Managing Editor", name: "Raghu Raja Isampalli" }].map((person) => <div key={person.role} className="border-t border-[#bdb4a7] pt-4"><p className="eyebrow">{person.role}</p><p className="font-editorial mt-2 text-xl text-[#263c5d]">{person.name}</p></div>)}
           </div>
           <Link href="/editorial-board" className="rule-link md:col-start-2">Meet the editorial board <ArrowRight size={15} /></Link>
         </div>

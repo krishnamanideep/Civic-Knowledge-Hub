@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowRight, CalendarDays, Check, FileText, Printer } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, FileText, Mail, MapPin, Printer } from "lucide-react";
 import { ContentFrame, NoteBox, PageIntro, SideCard } from "@/components/journal-layout";
 
 export type JournalPageType = "about" | "current-issue" | "archives" | "editorial-board" | "submissions" | "author-guidelines" | "peer-review" | "publication-ethics" | "contact" | "not-found";
@@ -32,7 +32,7 @@ const pageMetadata: Record<JournalPageType, { title: string; kicker: string; sum
   about: { title: "About the journal", kicker: "Purpose & scope", summary: "An interdisciplinary home for rigorous inquiry into contemporary politics, society and governance." },
   "current-issue": { title: "Current issue", kicker: "Inaugural issue · Forthcoming", summary: "Volume 1, Issue 1 is planned for January–March 2027. Article contents have not yet been announced." },
   archives: { title: "Journal archive", kicker: "Issues & publication record", summary: "Browse issue information as it becomes available. The journal is preparing its first issue; no published archive is yet available." },
-  "editorial-board": { title: "Editorial board", kicker: "Editorial leadership", summary: "Meet the named editors guiding the journal, and see what remains to be confirmed before launch." },
+  "editorial-board": { title: "Editorial board", kicker: "Editorial leadership", summary: "Meet the Editor-in-Chief, Managing Editor, and Editorial Board members guiding the journal." },
   submissions: { title: "Submit your manuscript", kicker: "For authors", summary: "JPSG welcomes original scholarship within its scope. Submission channels are not yet open; prepare your manuscript using the guidance below." },
   "author-guidelines": { title: "Author guidelines", kicker: "Prepare a manuscript", summary: "The essential requirements for work considered by the Journal of Politics, Society and Governance." },
   "peer-review": { title: "Peer-review policy", kicker: "Editorial standards", summary: "A transparent outline of editorial screening, independent assessment and the criteria used to evaluate submitted work." },
@@ -117,25 +117,110 @@ function ArchivesPage() {
 }
 
 function BoardPage() {
-  const editors = [
-    { role: "Managing Editor", name: "Raghu Raja Isampalli", detail: "M.A. Political Science · Founder, Democratic Organisation for Civic Knowledge Foundation" },
-    { role: "Associate Editor", name: "Dr. Priyanka Gangarapu", detail: "Guest Faculty, Andhra University, India" },
+  const leadership = [
+    {
+      role: "Editor-in-Chief",
+      name: "Dr. Priyanka Gangarapu",
+      detail: "Guest Faculty, Department of Political Science and Public Administration, Andhra University, Visakhapatnam, Andhra Pradesh, India",
+    },
+    {
+      role: "Managing Editor",
+      name: "Raghu Raja Isampalli",
+      detail: "M.A. Political Science · Founder, Democratic Organisation for Civic Knowledge Foundation",
+    },
   ];
-  return <>
-    <PageIntro {...pageMetadata["editorial-board"]} />
-    <ContentFrame aside={<NoteBox title="Appointments in progress">The Editor-in-Chief and other editorial board members will be listed here once their appointments and affiliations are confirmed.</NoteBox>}>
-      <h2 className="!mt-0">Editorial leadership</h2>
-      <p>The named appointments below reflect the journal’s current information. The full board is being established; unconfirmed names and institutional affiliations are not presented as appointments.</p>
-      <div className="mt-8 divide-y divide-[#d6cfc2] border-y border-[#d6cfc2]">
-        {editors.map((editor, index) => <section key={editor.role} className="grid gap-3 py-6 sm:grid-cols-[52px_1fr]">
-          <span className="font-editorial text-2xl text-[#b27a60]">0{index + 1}</span>
-          <div><p className="eyebrow">{editor.role}</p><h3 className="!mt-2 !mb-1 text-2xl">{editor.name}</h3><p className="!m-0 text-sm leading-6">{editor.detail}</p></div>
-        </section>)}
-      </div>
-      <h2>Editorial board appointments</h2>
-      <p>Additional roles, including the Editor-in-Chief and editorial board members, are forthcoming and will be announced after confirmation. No names, universities or appointments are implied by this notice.</p>
-    </ContentFrame>
-  </>;
+
+  const boardMembers = [
+    {
+      name: "Prof. Peteti Premanandam",
+      role: "Editorial Board Member",
+      designation: "Professor",
+      department: "Department of Political Science and Public Administration",
+      institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
+      email: "petetip@gmail.com",
+    },
+    {
+      name: "Dr. K. Satyam Narayana",
+      role: "Editorial Board Member",
+      designation: "Assistant Professor",
+      department: "Department of Political Science and Public Administration",
+      institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
+      email: "satyaknarayana45@gmail.com",
+    },
+    {
+      name: "Dr. A. Pavan Kumar",
+      role: "Editorial Board Member",
+      designation: "Faculty",
+      department: "Department of Commerce and Management Studies (DCMS)",
+      institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
+      address: "D.No 8-42-41, Tamil Street, Chinna Waltair, Visakhapatnam - 530017",
+      email: "pavankumardora@gmail.com",
+    },
+    {
+      name: "Dr. G. Saritha",
+      role: "Editorial Board Member",
+      designation: "Assistant Professor",
+      department: "Department of Economics",
+      institution: "Janet Degree College, Ibrahimpatnam, Andhra Pradesh, India",
+      email: "Sarithagallikonda@gmail.com",
+    },
+  ];
+
+  return (
+    <>
+      <PageIntro {...pageMetadata["editorial-board"]} />
+      <ContentFrame
+        aside={
+          <SideCard title="Editorial Governance">
+            <p className="text-sm leading-6 text-[#5b5c62]">
+              The Editorial Board provides academic leadership, peer-review oversight, and strategic direction for the <em>Journal of Politics, Society and Governance (JPSG)</em>.
+            </p>
+          </SideCard>
+        }
+      >
+        <h2 className="!mt-0">Editorial Leadership</h2>
+        <p>The editorial leadership team guides the peer review standards, academic integrity, and scholarly vision of the journal.</p>
+        <div className="mt-6 divide-y divide-[#d6cfc2] border-y border-[#d6cfc2]">
+          {leadership.map((editor, index) => (
+            <section key={editor.role} className="grid gap-3 py-6 sm:grid-cols-[52px_1fr]">
+              <span className="font-editorial text-2xl text-[#b27a60]">0{index + 1}</span>
+              <div>
+                <p className="eyebrow">{editor.role}</p>
+                <h3 className="!mt-2 !mb-1 text-2xl">{editor.name}</h3>
+                <p className="!m-0 text-sm leading-6">{editor.detail}</p>
+              </div>
+            </section>
+          ))}
+        </div>
+
+        <h2>Editorial Board Members</h2>
+        <p>Our editorial board brings together distinguished scholars and faculty members across political science, public administration, economics, and management studies.</p>
+        <div className="mt-6 grid gap-6 sm:grid-cols-2">
+          {boardMembers.map((member) => (
+            <div key={member.name} className="border border-[#d6cfc2] bg-[#f5f2eb] p-5">
+              <p className="eyebrow text-[#b27a60]">{member.role}</p>
+              <h3 className="!mt-1 !mb-2 text-xl font-editorial text-[#223758]">{member.name}</h3>
+              {member.designation && <p className="text-xs font-semibold uppercase tracking-wider text-[#77736d]">{member.designation}</p>}
+              <p className="!mt-1 !mb-0 text-sm leading-5 font-medium text-[#2f3e58]">{member.department}</p>
+              <p className="!mt-0 !mb-2 text-xs leading-5 text-[#676660]">{member.institution}</p>
+              {member.address && (
+                <p className="!mt-2 !mb-2 text-xs leading-4 text-[#676660] flex items-start gap-1.5">
+                  <MapPin size={13} className="mt-0.5 shrink-0 text-[#b27a60]" />
+                  <span>{member.address}</span>
+                </p>
+              )}
+              {member.email && (
+                <p className="!mt-2 !mb-0 text-xs font-medium text-[#223758] flex items-center gap-1.5">
+                  <Mail size={13} className="shrink-0 text-[#b27a60]" />
+                  <a href={`mailto:${member.email}`} className="hover:underline text-[#223758]">{member.email}</a>
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </ContentFrame>
+    </>
+  );
 }
 
 function SubmissionPage() {
