@@ -155,9 +155,9 @@ function ParticularsPage() {
     { label: "Publication Format / Medium", value: "Online / Digital Publication" },
     { label: "Primary Language", value: "English" },
     { label: "Peer Review Type", value: "Double-Blind Peer Review" },
-    { label: "Access Model", value: "Open Access Intent" },
-    { label: "Official Contact Email", value: "jpsg@dofck.org" },
-    { label: "Editorial Office Address", value: "#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam - 530048, Andhra Pradesh, India" },
+    { label: "Official Submission Email", value: "jpsg@docknowledge.org" },
+    { label: "General Contact Email", value: "contactus.jpsg@docknowledge.org" },
+    { label: "Editorial Office Address", value: "#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048" },
   ];
 
   return (
@@ -200,6 +200,7 @@ function BoardPage() {
       designation: "Faculty",
       department: "Department of Political Science and Public Administration",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
+      email: "priyagangarapu777@gmail.com",
     },
     {
       role: "Managing Editor",
@@ -207,6 +208,7 @@ function BoardPage() {
       designation: "Master of Arts in Political Science · Founder",
       department: "Democratic Organisation for Civic Knowledge Foundation",
       institution: "Visakhapatnam, Andhra Pradesh, India",
+      phone: "+91 9542774416",
       email: "iraghuraja25@gmail.com",
     },
   ];
@@ -243,7 +245,6 @@ function BoardPage() {
       designation: "Faculty",
       department: "Department of Philosophy",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
-      phone: "+91 9182602789",
       email: "drakshayanimanduva@gmail.com",
     },
     {
@@ -294,14 +295,22 @@ function BoardPage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-[#a45a40]">{leader.designation}</p>
               <p className="!mt-1 !mb-0 text-sm font-medium text-[#2f3e58]">{leader.department}</p>
               <p className="!mt-0 text-xs text-[#676660]">{leader.institution}</p>
-              {leader.email && (
-                <p className="!mt-3 !mb-0 text-xs font-medium text-[#1f314d] flex items-center gap-1.5 pt-2 border-t border-[#dfd7c8]">
-                  <Mail size={13} className="shrink-0 text-[#a45a40]" />
-                  <a href={`mailto:${leader.email}`} className="hover:underline text-[#1f314d]">
-                    {leader.email}
-                  </a>
-                </p>
-              )}
+              <div className="mt-3 pt-2 border-t border-[#dfd7c8] flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs font-medium text-[#1f314d]">
+                {leader.phone && (
+                  <span className="flex items-center gap-1.5">
+                    <Phone size={13} className="shrink-0 text-[#a45a40]" />
+                    <span>{leader.phone}</span>
+                  </span>
+                )}
+                {leader.email && (
+                  <span className="flex items-center gap-1.5">
+                    <Mail size={13} className="shrink-0 text-[#a45a40]" />
+                    <a href={`mailto:${leader.email}`} className="hover:underline text-[#1f314d]">
+                      {leader.email}
+                    </a>
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -519,10 +528,10 @@ function SubmissionPage() {
                 Authors can submit manuscripts directly to the editorial team via email:
               </p>
               <a
-                href="mailto:jpsg@dofck.org"
+                href="mailto:jpsg@docknowledge.org"
                 className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 bg-[#1f314d] text-white text-xs font-bold rounded-sm hover:bg-[#a45a40] transition-colors w-full justify-center shadow-sm"
               >
-                <Mail size={14} /> jpsg@dofck.org
+                <Mail size={14} /> jpsg@docknowledge.org
               </a>
             </SideCard>
 
@@ -551,11 +560,11 @@ function SubmissionPage() {
           </p>
           <div className="mt-4 p-4 bg-[#efe8db] border border-[#d6cfc2] rounded-sm flex items-center justify-between flex-wrap gap-3">
             <div>
-              <span className="block text-xs uppercase tracking-wider font-bold text-[#77736d]">Editorial Email</span>
-              <span className="font-mono font-bold text-lg text-[#1f314d]">jpsg@dofck.org</span>
+              <span className="block text-xs uppercase tracking-wider font-bold text-[#77736d]">Editorial Submission Email</span>
+              <span className="font-mono font-bold text-lg text-[#1f314d]">jpsg@docknowledge.org</span>
             </div>
             <a
-              href="mailto:jpsg@dofck.org?subject=Manuscript Submission - Journal of Politics, Society and Governance"
+              href="mailto:jpsg@docknowledge.org?subject=Manuscript Submission - Journal of Politics, Society and Governance"
               className="btn-primary px-5 py-2.5 text-xs font-bold inline-flex items-center gap-2 shadow-sm"
             >
               Submit via Email <ArrowRight size={14} />
@@ -703,19 +712,19 @@ function ContactPage() {
           </p>
           <p className="!mb-0 !mt-2 text-sm text-[#454952] leading-6 font-medium">
             #9-164/3, PVR Vani Vihar, Gandhi Nagar,<br />
-            Madhurawada, Visakhapatnam - 530048,<br />
-            Andhra Pradesh, India
+            Madhurawada, Visakhapatnam,<br />
+            Andhra Pradesh, India - 530048
           </p>
-          <div className="mt-4 pt-4 border-t border-[#dfd7c9] text-xs text-[#77736d] space-y-1.5">
-            <p><strong>Official Editorial Email:</strong> <a href="mailto:jpsg@dofck.org" className="font-mono text-[#1f314d] font-bold hover:underline">jpsg@dofck.org</a></p>
+          <div className="mt-4 pt-4 border-t border-[#dfd7c9] text-xs text-[#77736d] space-y-2">
+            <p><strong>Official Submission Email:</strong> <a href="mailto:jpsg@docknowledge.org" className="font-mono text-[#1f314d] font-bold hover:underline">jpsg@docknowledge.org</a></p>
+            <p><strong>General Contact Email:</strong> <a href="mailto:contactus.jpsg@docknowledge.org" className="font-mono text-[#1f314d] font-bold hover:underline">contactus.jpsg@docknowledge.org</a></p>
             <p><strong>Publisher:</strong> Democratic Organisation for Civic Knowledge Foundation</p>
-            <p><strong>Publication Office Location:</strong> Visakhapatnam, Andhra Pradesh, India</p>
           </div>
         </div>
 
         <h2>Enquiries & Communication</h2>
         <p>
-          For manuscript submissions, peer review inquiries, or general editorial communication, please email the editorial desk at <a href="mailto:jpsg@dofck.org" className="font-bold text-[#1f314d] hover:underline">jpsg@dofck.org</a>.
+          For manuscript submissions, please send your files to <a href="mailto:jpsg@docknowledge.org" className="font-bold text-[#1f314d] hover:underline">jpsg@docknowledge.org</a>. For general editorial, review, or institutional inquiries, contact us at <a href="mailto:contactus.jpsg@docknowledge.org" className="font-bold text-[#1f314d] hover:underline">contactus.jpsg@docknowledge.org</a>.
         </p>
       </ContentFrame>
     </>

@@ -56,7 +56,7 @@ export function JournalLayout({ children }: { children: ReactNode }) {
             </span>
           </div>
           <div className="flex items-center gap-4 text-xs">
-            <span>#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam - 530048, AP, India</span>
+            <span>#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048</span>
           </div>
         </div>
       </div>
@@ -135,7 +135,7 @@ export function JournalLayout({ children }: { children: ReactNode }) {
 
       <footer className="mt-16 border-t border-[#cfc7b9] bg-[#e9e5dc]">
         <div className="page-wrap py-12">
-          <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
+          <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1.2fr]">
             <div>
               <div className="flex items-center gap-3">
                 <img
@@ -172,20 +172,20 @@ export function JournalLayout({ children }: { children: ReactNode }) {
               <p className="text-xs leading-5 text-[#4b4d54]">
                 <strong>Journal of Politics, Society and Governance</strong><br />
                 #9-164/3, PVR Vani Vihar, Gandhi Nagar,<br />
-                Madhurawada, Visakhapatnam - 530048,<br />
-                Andhra Pradesh, India
+                Madhurawada, Visakhapatnam,<br />
+                Andhra Pradesh, India - 530048
               </p>
               <div className="mt-3 space-y-1 text-xs text-[#6e6a62]">
+                <p>Submission: <a href="mailto:jpsg@docknowledge.org" className="font-mono font-semibold text-[#1f314d] hover:underline">jpsg@docknowledge.org</a></p>
+                <p>Contact: <a href="mailto:contactus.jpsg@docknowledge.org" className="font-mono font-semibold text-[#1f314d] hover:underline">contactus.jpsg@docknowledge.org</a></p>
                 <p>Publisher: Democratic Organisation for Civic Knowledge Foundation</p>
-                <p>Frequency: Four Issues Annually (Quarterly)</p>
-                <p>Primary Language: English</p>
               </div>
             </div>
           </div>
 
           <div className="mt-10 flex flex-col gap-3 border-t border-[#d0c9bd] pt-5 text-xs text-[#77736d] sm:flex-row sm:items-center sm:justify-between">
             <span>© {new Date().getFullYear()} Democratic Organisation for Civic Knowledge Foundation. All rights reserved.</span>
-            <span>Journal of Politics, Society and Governance · Visakhapatnam - 530048, Andhra Pradesh, India</span>
+            <span>Journal of Politics, Society and Governance · Visakhapatnam, Andhra Pradesh, India - 530048</span>
           </div>
         </div>
       </footer>
