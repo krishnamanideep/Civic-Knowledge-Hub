@@ -107,9 +107,33 @@ export default function Home() {
 
       <section className="bg-[#e8e4db]">
         <div className="page-wrap grid gap-8 py-10 sm:py-14 md:grid-cols-[1fr_1fr] md:items-center">
-          <div><p className="eyebrow">Editorial leadership</p><h2 className="font-editorial mt-3 text-3xl text-[#263c5d]">Built for careful scholarship.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#62616a]">The editorial team supports rigorous, constructive assessment and clear publication standards. Meet our Editor-in-Chief, Managing Editor, and Editorial Board members.</p></div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[{ role: "Editor-in-Chief", name: "Dr. Priyanka Gangarapu" }, { role: "Managing Editor", name: "Raghu Raja Isampalli" }].map((person) => <div key={person.role} className="border-t border-[#bdb4a7] pt-4"><p className="eyebrow">{person.role}</p><p className="font-editorial mt-2 text-xl text-[#263c5d]">{person.name}</p></div>)}
+          <div>
+            <p className="eyebrow">Editorial leadership</p>
+            <h2 className="font-editorial mt-3 text-3xl text-[#263c5d]">Built for careful scholarship.</h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[#62616a]">The editorial team supports rigorous, constructive assessment and clear publication standards. Meet our Editor-in-Chief, Managing Editor, and Editorial Board members.</p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {[
+              {
+                role: "Editor-in-Chief",
+                name: "Dr. Priyanka Gangarapu",
+                designation: "Guest Faculty, Department of Political Science and Public Administration",
+                institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
+              },
+              {
+                role: "Managing Editor",
+                name: "Raghu Raja Isampalli",
+                designation: "Master of Arts in Political Science · Founder",
+                institution: "Democratic Organisation for Civic Knowledge Foundation, Visakhapatnam, Andhra Pradesh, India",
+              },
+            ].map((person) => (
+              <div key={person.role} className="border-t border-[#bdb4a7] pt-4">
+                <p className="eyebrow text-[#a45a40]">{person.role}</p>
+                <p className="font-editorial mt-1 text-xl font-bold text-[#263c5d]">{person.name}</p>
+                <p className="mt-1 text-xs font-semibold text-[#454952] leading-5">{person.designation}</p>
+                <p className="mt-0.5 text-xs text-[#77736d] leading-4">{person.institution}</p>
+              </div>
+            ))}
           </div>
           <Link href="/editorial-board" className="rule-link md:col-start-2">Meet the editorial board <ArrowRight size={15} /></Link>
         </div>
