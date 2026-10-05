@@ -157,7 +157,7 @@ function ParticularsPage() {
     { label: "Peer Review Type", value: "Double-Blind Peer Review" },
     { label: "Access Model", value: "Open Access Intent" },
     { label: "Subject Category", value: "Social Sciences (Political Science, Public Administration, Sociology, Governance, Policy Studies)" },
-    { label: "Editorial Office Address", value: "Visakhapatnam, Andhra Pradesh, India" },
+    { label: "Editorial Office Address", value: "#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam - 530048, Andhra Pradesh, India" },
   ];
 
   return (
@@ -640,10 +640,20 @@ function ContactPage() {
           </SideCard>
         }
       >
-        <h2 className="!mt-0">Editorial Office</h2>
-        <div className="my-6 border-y border-[#d6cfc2] py-5">
-          <p className="!m-0 font-editorial text-2xl text-[#1f314d] font-bold">Visakhapatnam</p>
-          <p className="!mb-0 !mt-1 text-sm text-[#676660]">Andhra Pradesh, India</p>
+        <h2 className="!mt-0">Editorial Office Address</h2>
+        <div className="my-6 border border-[#d6cfc2] bg-[#f7f4ec] p-6 rounded-sm shadow-sm">
+          <p className="!m-0 font-editorial text-xl text-[#1f314d] font-bold">
+            Journal of Politics, Society and Governance
+          </p>
+          <p className="!mb-0 !mt-2 text-sm text-[#454952] leading-6 font-medium">
+            #9-164/3, PVR Vani Vihar, Gandhi Nagar,<br />
+            Madhurawada, Visakhapatnam - 530048,<br />
+            Andhra Pradesh, India
+          </p>
+          <div className="mt-4 pt-4 border-t border-[#dfd7c9] text-xs text-[#77736d] space-y-1">
+            <p><strong>Publisher:</strong> Democratic Organisation for Civic Knowledge Foundation</p>
+            <p><strong>Publication Office Location:</strong> Visakhapatnam, Andhra Pradesh, India</p>
+          </div>
         </div>
 
         <h2>Enquiries & Communication</h2>

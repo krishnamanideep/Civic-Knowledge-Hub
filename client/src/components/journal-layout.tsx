@@ -56,7 +56,7 @@ export function JournalLayout({ children }: { children: ReactNode }) {
             </span>
           </div>
           <div className="flex items-center gap-4 text-xs">
-            <span>Visakhapatnam, Andhra Pradesh, India</span>
+            <span>#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam - 530048, AP, India</span>
           </div>
         </div>
       </div>
@@ -169,8 +169,10 @@ export function JournalLayout({ children }: { children: ReactNode }) {
 
             <div>
               <h2 className="eyebrow mb-3 text-[#a45a40]">Editorial Office</h2>
-              <p className="text-sm leading-6 text-[#4b4d54]">
-                <strong>Visakhapatnam</strong><br />
+              <p className="text-xs leading-5 text-[#4b4d54]">
+                <strong>Journal of Politics, Society and Governance</strong><br />
+                #9-164/3, PVR Vani Vihar, Gandhi Nagar,<br />
+                Madhurawada, Visakhapatnam - 530048,<br />
                 Andhra Pradesh, India
               </p>
               <div className="mt-3 space-y-1 text-xs text-[#6e6a62]">
@@ -183,7 +185,7 @@ export function JournalLayout({ children }: { children: ReactNode }) {
 
           <div className="mt-10 flex flex-col gap-3 border-t border-[#d0c9bd] pt-5 text-xs text-[#77736d] sm:flex-row sm:items-center sm:justify-between">
             <span>© {new Date().getFullYear()} Democratic Organisation for Civic Knowledge Foundation. All rights reserved.</span>
-            <span>Journal of Politics, Society and Governance · Visakhapatnam, Andhra Pradesh, India</span>
+            <span>Journal of Politics, Society and Governance · Visakhapatnam - 530048, Andhra Pradesh, India</span>
           </div>
         </div>
       </footer>
