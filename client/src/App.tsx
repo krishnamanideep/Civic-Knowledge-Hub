@@ -13,6 +13,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/about"><JournalPage page="about" /></Route>
+        <Route path="/particulars"><JournalPage page="particulars" /></Route>
         <Route path="/current-issue"><JournalPage page="current-issue" /></Route>
         <Route path="/archives"><JournalPage page="archives" /></Route>
         <Route path="/editorial-board"><JournalPage page="editorial-board" /></Route>
@@ -20,6 +21,7 @@ function Router() {
         <Route path="/author-guidelines"><JournalPage page="author-guidelines" /></Route>
         <Route path="/peer-review"><JournalPage page="peer-review" /></Route>
         <Route path="/publication-ethics"><JournalPage page="publication-ethics" /></Route>
+        <Route path="/faq"><JournalPage page="faq" /></Route>
         <Route path="/contact"><JournalPage page="contact" /></Route>
         <Route><JournalPage page="not-found" /></Route>
       </Switch>
