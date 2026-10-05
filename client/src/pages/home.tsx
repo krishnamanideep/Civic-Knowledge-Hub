@@ -117,7 +117,7 @@ export default function Home() {
               {
                 role: "Editor-in-Chief",
                 name: "Dr. Priyanka Gangarapu",
-                designation: "Guest Faculty, Department of Political Science and Public Administration",
+                designation: "Faculty, Department of Political Science and Public Administration",
                 institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
               },
               {

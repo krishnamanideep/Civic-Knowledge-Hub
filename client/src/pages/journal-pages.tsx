@@ -156,7 +156,7 @@ function ParticularsPage() {
     { label: "Primary Language", value: "English" },
     { label: "Peer Review Type", value: "Double-Blind Peer Review" },
     { label: "Access Model", value: "Open Access Intent" },
-    { label: "Subject Category", value: "Social Sciences (Political Science, Public Administration, Sociology, Governance, Policy Studies)" },
+    { label: "Official Contact Email", value: "jpsg@dofck.org" },
     { label: "Editorial Office Address", value: "#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam - 530048, Andhra Pradesh, India" },
   ];
 
@@ -197,7 +197,7 @@ function BoardPage() {
     {
       role: "Editor-in-Chief",
       name: "Dr. Priyanka Gangarapu",
-      designation: "Guest Faculty",
+      designation: "Faculty",
       department: "Department of Political Science and Public Administration",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
     },
@@ -207,6 +207,7 @@ function BoardPage() {
       designation: "Master of Arts in Political Science · Founder",
       department: "Democratic Organisation for Civic Knowledge Foundation",
       institution: "Visakhapatnam, Andhra Pradesh, India",
+      email: "iraghuraja25@gmail.com",
     },
   ];
 
@@ -282,7 +283,7 @@ function BoardPage() {
         </p>
 
         <div className="mt-6 space-y-6">
-          {leadership.map((leader, index) => (
+          {leadership.map((leader) => (
             <div key={leader.role} className="border-l-4 border-[#1f314d] border-y border-r border-[#d6cfc2] bg-[#f7f4ec] p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
                 <span className="bg-[#1f314d] text-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider rounded-sm">
@@ -293,6 +294,14 @@ function BoardPage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-[#a45a40]">{leader.designation}</p>
               <p className="!mt-1 !mb-0 text-sm font-medium text-[#2f3e58]">{leader.department}</p>
               <p className="!mt-0 text-xs text-[#676660]">{leader.institution}</p>
+              {leader.email && (
+                <p className="!mt-3 !mb-0 text-xs font-medium text-[#1f314d] flex items-center gap-1.5 pt-2 border-t border-[#dfd7c8]">
+                  <Mail size={13} className="shrink-0 text-[#a45a40]" />
+                  <a href={`mailto:${leader.email}`} className="hover:underline text-[#1f314d]">
+                    {leader.email}
+                  </a>
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -504,22 +513,58 @@ function SubmissionPage() {
       <ContentFrame
         aside={
           <div className="space-y-4">
-            <SideCard title="Submission Portal">
-              <p className="font-editorial text-xl text-[#1f314d]">Portal Forthcoming</p>
-              <p className="mt-2 text-sm leading-6 text-[#62616a]">
-                Online submission channels will open prior to Volume 1, Issue 1.
+            <SideCard title="Editorial Submission Mail">
+              <p className="font-editorial text-[#1f314d] font-bold text-lg">Email Your Manuscript</p>
+              <p className="mt-2 text-xs leading-5 text-[#5b5c62]">
+                Authors can submit manuscripts directly to the editorial team via email:
               </p>
+              <a
+                href="mailto:jpsg@dofck.org"
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 bg-[#1f314d] text-white text-xs font-bold rounded-sm hover:bg-[#a45a40] transition-colors w-full justify-center shadow-sm"
+              >
+                <Mail size={14} /> jpsg@dofck.org
+              </a>
+            </SideCard>
+
+            <SideCard title="Author Resources">
+              <div className="flex flex-col gap-2 text-xs">
+                <Link href="/author-guidelines" className="rule-link">Author Guidelines <ArrowRight size={13} /></Link>
+                <Link href="/peer-review" className="rule-link">Peer Review Policy <ArrowRight size={13} /></Link>
+                <Link href="/publication-ethics" className="rule-link">Publication Ethics <ArrowRight size={13} /></Link>
+                <Link href="/faq" className="rule-link">Frequently Asked Questions <ArrowRight size={13} /></Link>
+              </div>
             </SideCard>
           </div>
         }
       >
         <h2 className="!mt-0">Invitation for Authors</h2>
         <p>
-          Authors are invited to prepare original research papers within the interdisciplinary scope of political science, public administration, public policy, governance, and social studies.
+          The <em>Journal of Politics, Society and Governance</em> invites scholars, faculty members, policy researchers, and doctoral candidates to submit original research papers within the interdisciplinary scope of political science, public administration, public policy, governance, and social studies.
         </p>
 
+        <div className="my-6 border border-[#a45a40]/30 bg-[#f9f5ee] p-6 rounded-sm shadow-sm">
+          <h3 className="!mt-0 font-sans text-lg font-bold text-[#1f314d] flex items-center gap-2">
+            <Mail size={20} className="text-[#a45a40]" /> Official Submission Email Channel
+          </h3>
+          <p className="text-sm text-[#454952] leading-6 mt-2">
+            Authors should email their complete manuscript file (Microsoft Word `.doc`/`.docx` format) along with a cover letter directly to our official editorial desk:
+          </p>
+          <div className="mt-4 p-4 bg-[#efe8db] border border-[#d6cfc2] rounded-sm flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <span className="block text-xs uppercase tracking-wider font-bold text-[#77736d]">Editorial Email</span>
+              <span className="font-mono font-bold text-lg text-[#1f314d]">jpsg@dofck.org</span>
+            </div>
+            <a
+              href="mailto:jpsg@dofck.org?subject=Manuscript Submission - Journal of Politics, Society and Governance"
+              className="btn-primary px-5 py-2.5 text-xs font-bold inline-flex items-center gap-2 shadow-sm"
+            >
+              Submit via Email <ArrowRight size={14} />
+            </a>
+          </div>
+        </div>
+
         <h2>Manuscript Categories & Word Limits</h2>
-        <div className="my-5 overflow-hidden border border-[#d6cfc2] bg-[#f7f4ec]">
+        <div className="my-5 overflow-hidden border border-[#d6cfc2] bg-[#f7f4ec] shadow-sm">
           <table className="w-full border-collapse text-left text-sm">
             <thead className="bg-[#ece6d8]">
               <tr>
@@ -537,12 +582,23 @@ function SubmissionPage() {
                 <td className="p-3.5">4,000–7,000 words</td>
               </tr>
               <tr>
+                <th scope="row" className="p-3.5 font-medium">Policy Analysis / Research Note</th>
+                <td className="p-3.5">3,000–5,000 words</td>
+              </tr>
+              <tr>
                 <th scope="row" className="p-3.5 font-medium">Book Review</th>
                 <td className="p-3.5">1,500–2,500 words</td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <h2>Submission Preparation Checklist</h2>
+        <ul className="list-disc pl-5 space-y-2 text-sm text-[#42454d]">
+          <li><strong>Anonymized Manuscript File:</strong> Prepare a main manuscript document containing manuscript title, abstract (200–250 words), keywords (5–7), main body, tables, figures, and references, with author identifying details removed for double-blind review.</li>
+          <li><strong>Title Page File:</strong> A separate cover page including complete author names, designations, institutional department & university affiliations, ORCID IDs (if available), and corresponding author email address.</li>
+          <li><strong>Cover Letter:</strong> A brief letter confirming that the work is original, has not been published elsewhere, and is not currently under evaluation by another journal.</li>
+        </ul>
       </ContentFrame>
     </>
   );
@@ -650,7 +706,8 @@ function ContactPage() {
             Madhurawada, Visakhapatnam - 530048,<br />
             Andhra Pradesh, India
           </p>
-          <div className="mt-4 pt-4 border-t border-[#dfd7c9] text-xs text-[#77736d] space-y-1">
+          <div className="mt-4 pt-4 border-t border-[#dfd7c9] text-xs text-[#77736d] space-y-1.5">
+            <p><strong>Official Editorial Email:</strong> <a href="mailto:jpsg@dofck.org" className="font-mono text-[#1f314d] font-bold hover:underline">jpsg@dofck.org</a></p>
             <p><strong>Publisher:</strong> Democratic Organisation for Civic Knowledge Foundation</p>
             <p><strong>Publication Office Location:</strong> Visakhapatnam, Andhra Pradesh, India</p>
           </div>
@@ -658,7 +715,7 @@ function ContactPage() {
 
         <h2>Enquiries & Communication</h2>
         <p>
-          Official contact emails and online manuscript submission portals will be published on this page prior to the release of Volume 1, Issue 1.
+          For manuscript submissions, peer review inquiries, or general editorial communication, please email the editorial desk at <a href="mailto:jpsg@dofck.org" className="font-bold text-[#1f314d] hover:underline">jpsg@dofck.org</a>.
         </p>
       </ContentFrame>
     </>
