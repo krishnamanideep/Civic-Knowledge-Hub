@@ -168,24 +168,30 @@ export function JournalLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div>
-              <h2 className="eyebrow mb-3 text-[#a45a40]">Editorial Office</h2>
-              <p className="text-xs leading-5 text-[#4b4d54]">
-                <strong>Journal of Politics, Society and Governance</strong><br />
-                #9-164/3, PVR Vani Vihar, Gandhi Nagar,<br />
-                Madhurawada, Visakhapatnam,<br />
-                Andhra Pradesh, India - 530048
-              </p>
+              <h2 className="eyebrow mb-3 text-[#a45a40]">Publisher & Editorial Offices</h2>
+              <div className="space-y-3 text-xs leading-5 text-[#4b4d54]">
+                <div>
+                  <p className="font-bold text-[#1f314d]">Publisher's Office:</p>
+                  <p>Democratic Organisation for Civic Knowledge Foundation</p>
+                  <p>Hyderabad, Telangana, India</p>
+                </div>
+                <div>
+                  <p className="font-bold text-[#1f314d]">Editorial & Publication Office:</p>
+                  <p>#9-164/3, PVR Vani Vihar, Gandhi Nagar,</p>
+                  <p>Madhurawada, Visakhapatnam,</p>
+                  <p>Andhra Pradesh, India - 530048</p>
+                </div>
+              </div>
               <div className="mt-3 space-y-1 text-xs text-[#6e6a62]">
                 <p>Submission: <a href="mailto:jpsg@docknowledge.org" className="font-mono font-semibold text-[#1f314d] hover:underline">jpsg@docknowledge.org</a></p>
                 <p>Contact: <a href="mailto:contactus.jpsg@docknowledge.org" className="font-mono font-semibold text-[#1f314d] hover:underline">contactus.jpsg@docknowledge.org</a></p>
-                <p>Publisher: Democratic Organisation for Civic Knowledge Foundation</p>
               </div>
             </div>
           </div>
 
           <div className="mt-10 flex flex-col gap-3 border-t border-[#d0c9bd] pt-5 text-xs text-[#77736d] sm:flex-row sm:items-center sm:justify-between">
             <span>© {new Date().getFullYear()} Democratic Organisation for Civic Knowledge Foundation. All rights reserved.</span>
-            <span>Journal of Politics, Society and Governance · Visakhapatnam, Andhra Pradesh, India - 530048</span>
+            <span>Journal of Politics, Society and Governance (JPSG) · Published by Democratic Organisation for Civic Knowledge Foundation, India</span>
           </div>
         </div>
       </footer>

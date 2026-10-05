@@ -150,14 +150,15 @@ function ParticularsPage() {
     { label: "Journal Title", value: "Journal of Politics, Society and Governance" },
     { label: "Journal Abbreviation", value: "JPSG" },
     { label: "Publisher Name", value: "Democratic Organisation for Civic Knowledge Foundation" },
-    { label: "Publisher Location", value: "Visakhapatnam, Andhra Pradesh, India" },
+    { label: "Publisher's Office Location", value: "Hyderabad, Telangana, India" },
+    { label: "Editorial & Publication Office Address", value: "#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048" },
     { label: "Publication Frequency", value: "Four Issues Annually (Quarterly)" },
     { label: "Publication Format / Medium", value: "Online / Digital Publication" },
     { label: "Primary Language", value: "English" },
     { label: "Peer Review Type", value: "Double-Blind Peer Review" },
+    { label: "Access Model", value: "Open Access Intent" },
     { label: "Official Submission Email", value: "jpsg@docknowledge.org" },
     { label: "General Contact Email", value: "contactus.jpsg@docknowledge.org" },
-    { label: "Editorial Office Address", value: "#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048" },
   ];
 
   return (
@@ -207,7 +208,7 @@ function BoardPage() {
       name: "Raghu Raja Isampalli",
       designation: "Master of Arts in Political Science · Founder",
       department: "Democratic Organisation for Civic Knowledge Foundation",
-      institution: "Visakhapatnam, Andhra Pradesh, India",
+      institution: "Hyderabad, Telangana, India",
       phone: "+91 9542774416",
       email: "iraghuraja25@gmail.com",
     },
@@ -410,8 +411,9 @@ function FAQPage() {
     <>
       <PageIntro {...pageMetadata.faq} />
       <ContentFrame aside={<Sidebar label="Quick Navigation" />}>
-        <h2 className="!mt-0">Frequently Asked Questions</h2>
-        <p>Find clear answers to common inquiries regarding the journal's scope, submission process, review policies, and editorial standards:</p>
+        <p className="!mt-0 font-editorial text-xl font-semibold text-[#1f314d]">
+          Find clear answers to common inquiries regarding the journal's scope, submission process, review policies, and editorial standards:
+        </p>
 
         <div className="mt-6 space-y-3">
           {faqs.map((faq, index) => {

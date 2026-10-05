@@ -124,7 +124,7 @@ export default function Home() {
                 role: "Managing Editor",
                 name: "Raghu Raja Isampalli",
                 designation: "Master of Arts in Political Science · Founder",
-                institution: "Democratic Organisation for Civic Knowledge Foundation, Visakhapatnam, Andhra Pradesh, India",
+                institution: "Democratic Organisation for Civic Knowledge Foundation, Hyderabad, Telangana, India",
               },
             ].map((person) => (
               <div key={person.role} className="border-t border-[#bdb4a7] pt-4">
