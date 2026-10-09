@@ -40,47 +40,26 @@ export function JournalLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col paper-texture font-sans text-[#2c3038]">
-      {/* Top Banner Strip inspired by SIJSS / Academic Journal Standards */}
-      <div className="bg-[#1f314d] text-[#e3ded2] text-[0.72rem] py-1.5 px-4 border-b border-[#14233a]">
-        <div className="page-wrap flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div className="flex items-center gap-4 flex-wrap">
-            <span className="flex items-center gap-1.5 font-medium">
-              <BookOpen size={12} className="text-[#d8987b]" />
-              Journal of Politics, Society and Governance
-            </span>
-            <span className="hidden md:inline text-white/30">|</span>
-            <span className="hidden md:inline text-white/80">Quarterly Peer-Reviewed Academic Journal</span>
-            <span className="hidden md:inline text-white/30">|</span>
-            <span className="flex items-center gap-1 text-[#d8987b]">
-              <ShieldCheck size={12} /> Open Access Intent
-            </span>
-          </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span>#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048</span>
-          </div>
-        </div>
-      </div>
-
       <header className="site-header bg-[#f7f4ec] border-b border-[#dcd4c5]">
         <div className="page-wrap">
-          <div className="flex items-center justify-between gap-5 py-4">
-            <Link href="/" className="flex items-center gap-4 no-underline group" aria-label="Journal Homepage">
+          <div className="flex items-center justify-between gap-3 sm:gap-5 py-3.5 sm:py-4">
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-4 no-underline group shrink min-w-0" aria-label="Journal Homepage">
               <img
                 src="/logo.png"
                 alt="Journal of Politics, Society and Governance Logo"
-                className="h-16 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+                className="h-11 sm:h-16 w-auto object-contain shrink-0 transition-transform group-hover:scale-[1.02]"
               />
-              <div className="hidden sm:block border-l border-[#d3cbba] pl-4">
-                <span className="block font-editorial text-[1.15rem] leading-tight font-semibold tracking-tight text-[#1e3456]">
+              <div className="border-l border-[#d3cbba] pl-2.5 sm:pl-4 min-w-0">
+                <span className="block font-editorial text-[clamp(1.05rem,2.2vw,2.1rem)] leading-[1.12] font-bold tracking-tight text-[#1e3456]">
                   Journal of Politics, Society and Governance
                 </span>
-                <span className="mt-1 block text-[0.63rem] font-bold tracking-[0.14em] text-[#77736d] uppercase">
+                <span className="mt-1 hidden sm:block text-[0.63rem] font-bold tracking-[0.14em] text-[#77736d] uppercase">
                   Published by Democratic Organisation for Civic Knowledge Foundation
                 </span>
               </div>
             </Link>
 
-            <div className="hidden items-center gap-3 md:flex">
+            <div className="hidden items-center gap-3 md:flex shrink-0">
               <div className="text-right text-xs text-[#6e6a62]">
                 <div className="font-semibold text-[#1f314d]">Volume 1 · Issue 1</div>
                 <div>Planned for 2027</div>
@@ -95,12 +74,12 @@ export function JournalLayout({ children }: { children: ReactNode }) {
 
             <button
               type="button"
-              className="inline-flex h-11 w-11 items-center justify-center border border-[#cfc7b9] text-[#273c60] md:hidden bg-[#f0ede4]"
+              className="inline-flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center border border-[#cfc7b9] text-[#273c60] md:hidden bg-[#f0ede4]"
               aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileOpen}
               onClick={() => setMobileOpen(!mobileOpen)}
             >
-              {mobileOpen ? <X size={21} /> : <Menu size={21} />}
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
 

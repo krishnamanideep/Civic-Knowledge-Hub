@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, CalendarDays, Check, FileText, Mail, MapPin, Phone, Printer, ChevronDown, ChevronUp, BookOpen, ShieldCheck, HelpCircle } from "lucide-react";
 import { ContentFrame, NoteBox, PageIntro, SideCard } from "@/components/journal-layout";
+import { subjectAreas } from "./home";
 
 export type JournalPageType =
   | "about"
@@ -17,12 +18,12 @@ export type JournalPageType =
   | "contact"
   | "not-found";
 
-const interests = [
-  "Political Science", "Indian Politics", "Comparative Politics", "Political Theory", "Public Administration",
-  "Public Policy", "Governance", "Constitutional Studies", "Democracy and Civic Engagement", "Political Communication",
-  "Social Justice", "Caste and Social Studies", "Human Rights", "Gender and Politics", "Education and Society",
-  "Development Studies", "Local Governance", "Digital Democracy", "Contemporary Social and Political Issues",
-];
+function getInitials(name: string) {
+  const clean = name.replace(/^(Dr\.|Prof\.|Mr\.|Mrs\.|Ms\.)\s*/i, "").trim();
+  const parts = clean.split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 const reviewCriteria = ["Originality", "Methodology", "Theoretical contribution", "Quality of analysis", "Relevance", "Academic writing", "References", "Overall contribution to the field"];
 const manuscriptKinds = ["Original Research Article", "Review Article", "Research Note", "Policy Analysis", "Book Review"];
@@ -127,11 +128,21 @@ function AboutPage() {
 
         <h2>Subject Areas and Scope</h2>
         <p>Research across the following areas is welcome. The list represents core areas of interest:</p>
-        <ul className="grid list-inside list-disc gap-x-8 gap-y-1 sm:grid-cols-2">
-          {interests.map((interest) => (
-            <li key={interest}>{interest}</li>
+        <div className="my-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {subjectAreas.map((area, idx) => (
+            <div
+              key={area}
+              className="flex items-center gap-3 border border-[#d6cfc2] bg-[#f7f4ec] px-3.5 py-3 rounded-sm shadow-xs hover:border-[#a45a40] transition-colors"
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#e8e2d2] text-[0.7rem] font-bold text-[#a45a40]">
+                {idx + 1}
+              </span>
+              <span className="text-sm font-medium text-[#263c5d] leading-tight">
+                {area}
+              </span>
+            </div>
           ))}
-        </ul>
+        </div>
 
         <h2>Publication Model & Schedule</h2>
         <p>
@@ -209,7 +220,6 @@ function BoardPage() {
       designation: "Master of Arts in Political Science · Founder",
       department: "Democratic Organisation for Civic Knowledge Foundation",
       institution: "Hyderabad, Telangana, India",
-      phone: "+91 9542774416",
       email: "iraghuraja25@gmail.com",
     },
   ];
@@ -237,7 +247,6 @@ function BoardPage() {
       designation: "Faculty",
       department: "Department of Anthropology",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
-      phone: "+91 9849232387",
       email: "drseshuanphropologist@gmail.com",
     },
     {
@@ -265,6 +274,22 @@ function BoardPage() {
       institution: "Janet Degree College, Ibrahimpatnam, Andhra Pradesh, India",
       email: "Sarithagallikonda@gmail.com",
     },
+    {
+      name: "Dr. Valluri Prasadarao",
+      role: "Editorial Board Member",
+      designation: "Assistant Professor & Principal",
+      department: "Pratibha Civils Academy (Krishnaveni College), Vijayawada",
+      institution: "Krishna University",
+      email: "valluripr@gmail.com",
+    },
+    {
+      name: "Dr. Devarakonda Ramesh",
+      role: "Editorial Board Member",
+      designation: "Faculty",
+      department: "Department of Anthropology",
+      institution: "",
+      email: "dr.anthro.au@gmail.com",
+    },
   ];
 
   return (
@@ -286,31 +311,30 @@ function BoardPage() {
 
         <div className="mt-6 space-y-6">
           {leadership.map((leader) => (
-            <div key={leader.role} className="border-l-4 border-[#1f314d] border-y border-r border-[#d6cfc2] bg-[#f7f4ec] p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="bg-[#1f314d] text-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider rounded-sm">
-                  {leader.role}
-                </span>
+            <div key={leader.role} className="border-l-4 border-[#1f314d] border-y border-r border-[#d6cfc2] bg-[#f7f4ec] p-6 shadow-sm flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#1f314d] text-[#e8e2d2] font-editorial text-base font-bold shadow-sm border border-[#344a6f]">
+                {getInitials(leader.name)}
               </div>
-              <h3 className="!mt-1 !mb-2 text-2xl font-editorial font-bold text-[#1f314d]">{leader.name}</h3>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#a45a40]">{leader.designation}</p>
-              <p className="!mt-1 !mb-0 text-sm font-medium text-[#2f3e58]">{leader.department}</p>
-              <p className="!mt-0 text-xs text-[#676660]">{leader.institution}</p>
-              <div className="mt-3 pt-2 border-t border-[#dfd7c8] flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs font-medium text-[#1f314d]">
-                {leader.phone && (
-                  <span className="flex items-center gap-1.5">
-                    <Phone size={13} className="shrink-0 text-[#a45a40]" />
-                    <span>{leader.phone}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="bg-[#1f314d] text-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider rounded-sm">
+                    {leader.role}
                   </span>
-                )}
-                {leader.email && (
-                  <span className="flex items-center gap-1.5">
-                    <Mail size={13} className="shrink-0 text-[#a45a40]" />
-                    <a href={`mailto:${leader.email}`} className="hover:underline text-[#1f314d]">
-                      {leader.email}
-                    </a>
-                  </span>
-                )}
+                </div>
+                <h3 className="!mt-1 !mb-2 text-2xl font-editorial font-bold text-[#1f314d]">{leader.name}</h3>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#a45a40]">{leader.designation}</p>
+                <p className="!mt-1 !mb-0 text-sm font-medium text-[#2f3e58]">{leader.department}</p>
+                <p className="!mt-0 text-xs text-[#676660]">{leader.institution}</p>
+                <div className="mt-3 pt-2 border-t border-[#dfd7c8] flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs font-medium text-[#1f314d]">
+                  {leader.email && (
+                    <span className="flex items-center gap-1.5">
+                      <Mail size={13} className="shrink-0 text-[#a45a40]" />
+                      <a href={`mailto:${leader.email}`} className="hover:underline text-[#1f314d]">
+                        {leader.email}
+                      </a>
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -324,30 +348,29 @@ function BoardPage() {
         <div className="mt-6 grid gap-6 sm:grid-cols-2">
           {boardMembers.map((member) => (
             <div key={member.name} className="border border-[#d6cfc2] bg-[#f5f2eb] p-5 rounded-sm shadow-sm flex flex-col justify-between">
-              <div>
-                <p className="eyebrow text-[#a45a40] text-[0.68rem]">{member.role}</p>
-                <h3 className="!mt-1 !mb-2 text-xl font-editorial font-bold text-[#1f314d]">{member.name}</h3>
-                {member.designation && (
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[#77736d] mb-1">{member.designation}</p>
-                )}
-                <p className="!mt-1 !mb-0 text-sm leading-5 font-medium text-[#2f3e58]">{member.department}</p>
-                <p className="!mt-0 !mb-3 text-xs leading-5 text-[#676660]">{member.institution}</p>
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1f314d] text-[#e8e2d2] font-editorial text-sm font-bold shadow-sm border border-[#344a6f]">
+                  {getInitials(member.name)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="eyebrow text-[#a45a40] text-[0.68rem]">{member.role}</p>
+                  <h3 className="!mt-0.5 !mb-1 text-xl font-editorial font-bold text-[#1f314d]">{member.name}</h3>
+                  {member.designation && (
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#77736d] mb-1">{member.designation}</p>
+                  )}
+                  <p className="!mt-1 !mb-0 text-sm leading-5 font-medium text-[#2f3e58]">{member.department}</p>
+                  {member.institution && <p className="!mt-0 !mb-2 text-xs leading-5 text-[#676660]">{member.institution}</p>}
 
-                {member.address && (
-                  <p className="!mt-2 !mb-2 text-xs leading-4 text-[#676660] flex items-start gap-1.5 bg-[#eae5d8] p-2 rounded-sm border border-[#d8d1c2]">
-                    <MapPin size={13} className="mt-0.5 shrink-0 text-[#a45a40]" />
-                    <span>{member.address}</span>
-                  </p>
-                )}
+                  {member.address && (
+                    <p className="!mt-2 !mb-2 text-xs leading-4 text-[#676660] flex items-start gap-1.5 bg-[#eae5d8] p-2 rounded-sm border border-[#d8d1c2]">
+                      <MapPin size={13} className="mt-0.5 shrink-0 text-[#a45a40]" />
+                      <span>{member.address}</span>
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-[#d8d1c2] space-y-1.5">
-                {member.phone && (
-                  <p className="!m-0 text-xs font-medium text-[#1f314d] flex items-center gap-1.5">
-                    <Phone size={12} className="shrink-0 text-[#a45a40]" />
-                    <span>{member.phone}</span>
-                  </p>
-                )}
+              <div className="mt-4 pt-3 border-t border-[#d8d1c2]">
                 {member.email && (
                   <p className="!m-0 text-xs font-medium text-[#1f314d] flex items-center gap-1.5">
                     <Mail size={12} className="shrink-0 text-[#a45a40]" />

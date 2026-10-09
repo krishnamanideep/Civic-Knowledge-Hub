@@ -2,13 +2,28 @@ import { useEffect } from "react";
 import { Link } from "wouter";
 import { ArrowDown, ArrowRight, ArrowUpRight, BookOpenText, CalendarDays, Globe2, Scale } from "lucide-react";
 
-const areas = [
-  "Political Science", "Indian Politics", "Comparative Politics", "Political Theory",
-  "Public Administration", "Public Policy", "Governance", "Constitutional Studies",
-  "Democracy and Civic Engagement", "Political Communication", "Social Justice",
-  "Caste and Social Studies", "Human Rights", "Gender and Politics", "Education and Society",
-  "Development Studies", "Local Governance", "Digital Democracy",
+export const subjectAreas = [
+  "Political Science and Public Administration",
+  "Sociology and Anthropology",
+  "Management Studies",
+  "Philosophy",
+  "Economics",
+  "Gender Studies",
+  "Social Justice",
+  "Literature (Languages)",
+  "History and Archaeology",
+  "International Relations and Foreign Policy",
+  "Journalism and Mass Communication",
+  "Law and Ethics",
+  "Rural and Urban Studies",
+  "Social Exclusion and Inclusive Policy",
+  "Psychology",
+  "Social Work",
   "Contemporary Social and Political Issues",
+  "Education and Society",
+  "Human Rights",
+  "Democracy and Civic Engagement",
+  "Constitutional Studies",
 ];
 
 export default function Home() {
@@ -19,10 +34,10 @@ export default function Home() {
   }, []);
   return (
     <div>
-      <section className="page-wrap grid min-h-[570px] items-center gap-10 py-14 md:grid-cols-[1.25fr_.75fr] md:py-20">
+      <section className="page-wrap grid min-h-[520px] items-center gap-10 py-12 md:grid-cols-[1.25fr_.75fr] md:py-16">
         <div className="enter">
           <p className="eyebrow mb-6 flex items-center gap-2"><span className="inline-block h-px w-8 bg-[#a45a40]" />A scholarly forum for public life</p>
-          <h1 className="font-editorial max-w-3xl text-[clamp(3.3rem,8.5vw,7.6rem)] font-medium leading-[.91] tracking-[-.055em] text-[#213858]">Ideas for a<br /><em className="font-normal text-[#a45a40]">changing</em> society.</h1>
+          <h1 className="font-editorial max-w-3xl text-[clamp(2.1rem,4.8vw,4.6rem)] font-medium leading-[.95] tracking-[-.045em] text-[#213858]">Ideas for a<br /><em className="font-normal text-[#a45a40]">changing</em> society.</h1>
           <p className="mt-7 max-w-xl text-base leading-7 text-[#565860] sm:text-lg sm:leading-8">The Journal of Politics, Society and Governance brings careful, interdisciplinary scholarship to the questions shaping democratic life, public institutions and social change.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/current-issue" className="btn-primary inline-flex min-h-12 items-center justify-center gap-3 px-5 text-sm font-bold">Explore the current issue <ArrowRight size={16} /></Link>
@@ -79,11 +94,26 @@ export default function Home() {
       <section className="border-y border-[#d9d2c6] bg-[#f0ede6] py-14 sm:py-20">
         <div className="page-wrap">
           <div className="mb-9 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div><p className="eyebrow">Areas of interest</p><h2 className="font-editorial mt-3 text-3xl text-[#263c5d] sm:text-4xl">A broad lens on public life</h2></div>
+            <div>
+              <p className="eyebrow">Areas of interest</p>
+              <h2 className="font-editorial mt-3 text-3xl text-[#263c5d] sm:text-4xl">A broad lens on public life</h2>
+            </div>
             <Link href="/about" className="rule-link">Full journal scope <ArrowRight size={15} /></Link>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {areas.map((area, index) => <span key={area} className={`border px-3 py-2 text-[.78rem] ${index % 4 === 1 ? "border-[#b5c1cc] bg-[#e6e9e8] text-[#31435c]" : "border-[#d5ccbd] bg-[#f7f5ef] text-[#565860]"}`}>{area}</span>)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {subjectAreas.map((area, idx) => (
+              <div
+                key={area}
+                className="flex items-center gap-3 border border-[#d5ccbd] bg-[#f7f5ef] px-4 py-3 rounded-sm shadow-xs hover:border-[#a45a40] transition-colors"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#e8e2d2] text-[0.7rem] font-bold text-[#a45a40]">
+                  {idx + 1}
+                </span>
+                <span className="text-sm font-medium text-[#263c5d] leading-tight">
+                  {area}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
