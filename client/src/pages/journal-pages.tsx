@@ -740,16 +740,10 @@ function ContactPage() {
             Andhra Pradesh, India - 530048
           </p>
           <div className="mt-4 pt-4 border-t border-[#dfd7c9] text-xs text-[#77736d] space-y-2">
-            <p><strong>Official Submission Email:</strong> <a href="mailto:jpsg@docknowledge.org" className="font-mono text-[#1f314d] font-bold hover:underline">jpsg@docknowledge.org</a></p>
-            <p><strong>General Contact Email:</strong> <a href="mailto:contactus.jpsg@docknowledge.org" className="font-mono text-[#1f314d] font-bold hover:underline">contactus.jpsg@docknowledge.org</a></p>
-            <p><strong>Publisher:</strong> Democratic Organisation for Civic Knowledge Foundation</p>
+            <p><strong>Contact Email:</strong> <a href="mailto:contactus.jpsg@docknowledge.org" className="font-mono text-[#1f314d] font-bold hover:underline">contactus.jpsg@docknowledge.org</a></p>
+            <p className="leading-5"><strong>Publisher:</strong> Democratic Organisation for Civic Knowledge Foundation</p>
           </div>
         </div>
-
-        <h2>Enquiries & Communication</h2>
-        <p>
-          For manuscript submissions, please send your files to <a href="mailto:jpsg@docknowledge.org" className="font-bold text-[#1f314d] hover:underline">jpsg@docknowledge.org</a>. For general editorial, review, or institutional inquiries, contact us at <a href="mailto:contactus.jpsg@docknowledge.org" className="font-bold text-[#1f314d] hover:underline">contactus.jpsg@docknowledge.org</a>.
-        </p>
       </ContentFrame>
     </>
   );
