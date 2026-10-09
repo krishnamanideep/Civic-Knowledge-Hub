@@ -284,9 +284,9 @@ function BoardPage() {
     {
       name: "Dr. Devarakonda Ramesh",
       role: "Editorial Board Member",
-      designation: "Faculty",
+      designation: "Professor",
       department: "Department of Anthropology",
-      institution: "",
+      institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
       email: "dr.anthro.au@gmail.com",
     },
   ];
