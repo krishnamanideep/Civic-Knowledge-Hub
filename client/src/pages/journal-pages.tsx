@@ -226,12 +226,20 @@ function BoardPage() {
 
   const boardMembers = [
     {
-      name: "Prof. Peteti Premanandam",
+      name: "Dr. Peteti Premanandam",
       role: "Editorial Board Member",
       designation: "Professor",
       department: "Department of Political Science and Public Administration",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
       email: "petetip@gmail.com",
+    },
+    {
+      name: "Dr. Devarakonda Ramesh",
+      role: "Editorial Board Member",
+      designation: "Professor",
+      department: "Department of Anthropology",
+      institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
+      email: "dr.anthro.au@gmail.com",
     },
     {
       name: "Dr. K. Satyam Narayana",
@@ -240,6 +248,22 @@ function BoardPage() {
       department: "Department of Political Science and Public Administration",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
       email: "satyaknarayana45@gmail.com",
+    },
+    {
+      name: "Dr. G. Saritha",
+      role: "Editorial Board Member",
+      designation: "Assistant Professor",
+      department: "Department of Economics",
+      institution: "Janet Degree College, Ibrahimpatnam, Andhra Pradesh, India",
+      email: "Sarithagallikonda@gmail.com",
+    },
+    {
+      name: "Dr. Valluri Prasadarao",
+      role: "Editorial Board Member",
+      designation: "Assistant Professor & Principal",
+      department: "Pratibha Civils Academy (Krishnaveni College), Vijayawada",
+      institution: "Krishna University",
+      email: "valluripr@gmail.com",
     },
     {
       name: "Dr. Chippada Seshagiri Rao",
@@ -264,30 +288,6 @@ function BoardPage() {
       department: "Department of Commerce and Management Studies (DCMS)",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
       email: "pavankumardora@gmail.com",
-    },
-    {
-      name: "Dr. G. Saritha",
-      role: "Editorial Board Member",
-      designation: "Assistant Professor",
-      department: "Department of Economics",
-      institution: "Janet Degree College, Ibrahimpatnam, Andhra Pradesh, India",
-      email: "Sarithagallikonda@gmail.com",
-    },
-    {
-      name: "Dr. Valluri Prasadarao",
-      role: "Editorial Board Member",
-      designation: "Assistant Professor & Principal",
-      department: "Pratibha Civils Academy (Krishnaveni College), Vijayawada",
-      institution: "Krishna University",
-      email: "valluripr@gmail.com",
-    },
-    {
-      name: "Dr. Devarakonda Ramesh",
-      role: "Editorial Board Member",
-      designation: "Professor",
-      department: "Department of Anthropology",
-      institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
-      email: "dr.anthro.au@gmail.com",
     },
   ];
 
