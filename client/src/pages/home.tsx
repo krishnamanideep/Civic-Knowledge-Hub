@@ -145,15 +145,15 @@ export default function Home() {
           <div className="grid gap-6 sm:grid-cols-2">
             {[
               {
-                role: "Editor-in-Chief",
+                role: "Editor-in-Chief / Co-Founder",
                 name: "Dr. Priyanka Gangarapu",
                 designation: "Faculty, Department of Political Science and Public Administration",
                 institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
               },
               {
-                role: "Managing Editor",
+                role: "Managing Editor / Founder",
                 name: "Raghu Raja Isampalli",
-                designation: "Master of Arts in Political Science · Founder",
+                designation: "MA Political Science",
                 institution: "Democratic Organisation for Civic Knowledge Foundation, Hyderabad, Telangana, India",
               },
             ].map((person) => (

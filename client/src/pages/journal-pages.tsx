@@ -162,7 +162,7 @@ function ParticularsPage() {
     { label: "Journal Abbreviation", value: "JPSG" },
     { label: "Publisher Name", value: "Democratic Organisation for Civic Knowledge Foundation" },
     { label: "Publisher's Office Location", value: "Hyderabad, Telangana, India" },
-    { label: "Editorial & Publication Office Address", value: "#9-164/3, PVR Vani Vihar, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048" },
+    { label: "Editorial & Publication Office Address", value: "#9-164/3, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048" },
     { label: "Publication Frequency", value: "Four Issues Annually (Quarterly)" },
     { label: "Publication Format / Medium", value: "Online / Digital Publication" },
     { label: "Primary Language", value: "English" },
@@ -207,7 +207,7 @@ function ParticularsPage() {
 function BoardPage() {
   const leadership = [
     {
-      role: "Editor-in-Chief",
+      role: "Editor-in-Chief / Co-Founder",
       name: "Dr. Priyanka Gangarapu",
       designation: "Faculty",
       department: "Department of Political Science and Public Administration",
@@ -215,9 +215,9 @@ function BoardPage() {
       email: "priyagangarapu777@gmail.com",
     },
     {
-      role: "Managing Editor",
+      role: "Managing Editor / Founder",
       name: "Raghu Raja Isampalli",
-      designation: "Master of Arts in Political Science · Founder",
+      designation: "MA Political Science",
       department: "Democratic Organisation for Civic Knowledge Foundation",
       institution: "Hyderabad, Telangana, India",
       email: "iraghuraja25@gmail.com",
@@ -263,7 +263,6 @@ function BoardPage() {
       designation: "Faculty",
       department: "Department of Commerce and Management Studies (DCMS)",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
-      address: "Door No. 8-42-41, Tamil Street, Chinna Waltair, Visakhapatnam - 530017, Andhra Pradesh, India",
       email: "pavankumardora@gmail.com",
     },
     {
@@ -361,10 +360,10 @@ function BoardPage() {
                   <p className="!mt-1 !mb-0 text-sm leading-5 font-medium text-[#2f3e58]">{member.department}</p>
                   {member.institution && <p className="!mt-0 !mb-2 text-xs leading-5 text-[#676660]">{member.institution}</p>}
 
-                  {member.address && (
+                  {"address" in member && (member as { address?: string }).address && (
                     <p className="!mt-2 !mb-2 text-xs leading-4 text-[#676660] flex items-start gap-1.5 bg-[#eae5d8] p-2 rounded-sm border border-[#d8d1c2]">
                       <MapPin size={13} className="mt-0.5 shrink-0 text-[#a45a40]" />
-                      <span>{member.address}</span>
+                      <span>{(member as { address?: string }).address}</span>
                     </p>
                   )}
                 </div>
@@ -736,7 +735,7 @@ function ContactPage() {
             Journal of Politics, Society and Governance
           </p>
           <p className="!mb-0 !mt-2 text-sm text-[#454952] leading-6 font-medium">
-            #9-164/3, PVR Vani Vihar, Gandhi Nagar,<br />
+            #9-164/3, Gandhi Nagar,<br />
             Madhurawada, Visakhapatnam,<br />
             Andhra Pradesh, India - 530048
           </p>

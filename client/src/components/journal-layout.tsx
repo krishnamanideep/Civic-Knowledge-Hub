@@ -156,13 +156,12 @@ export function JournalLayout({ children }: { children: ReactNode }) {
                 </div>
                 <div>
                   <p className="font-bold text-[#1f314d]">Editorial & Publication Office:</p>
-                  <p>#9-164/3, PVR Vani Vihar, Gandhi Nagar,</p>
+                  <p>#9-164/3, Gandhi Nagar,</p>
                   <p>Madhurawada, Visakhapatnam,</p>
                   <p>Andhra Pradesh, India - 530048</p>
                 </div>
               </div>
               <div className="mt-3 space-y-1 text-xs text-[#6e6a62]">
-                <p>Submission: <a href="mailto:jpsg@docknowledge.org" className="font-mono font-semibold text-[#1f314d] hover:underline">jpsg@docknowledge.org</a></p>
                 <p>Contact: <a href="mailto:contactus.jpsg@docknowledge.org" className="font-mono font-semibold text-[#1f314d] hover:underline">contactus.jpsg@docknowledge.org</a></p>
               </div>
             </div>
