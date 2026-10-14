@@ -62,7 +62,7 @@ export function JournalLayout({ children }: { children: ReactNode }) {
             <div className="hidden items-center gap-3 md:flex shrink-0">
               <div className="text-right text-xs text-[#6e6a62]">
                 <div className="font-semibold text-[#1f314d]">Volume 1 · Issue 1</div>
-                <div>Planned for 2027</div>
+                <div className="text-[#3d7a42] font-semibold">Current Issue · 2027</div>
               </div>
               <Link
                 href="/submissions"

@@ -3,6 +3,8 @@ import { Link } from "wouter";
 import { ArrowRight, CalendarDays, Check, FileText, Mail, MapPin, Phone, Printer, ChevronDown, ChevronUp, BookOpen, ShieldCheck, HelpCircle, Download, FileDown, ExternalLink } from "lucide-react";
 import { ContentFrame, NoteBox, PageIntro, SideCard } from "@/components/journal-layout";
 import { ManuscriptTemplatesSection } from "@/components/manuscript-templates";
+import { currentIssueArticles } from "@/data/articles";
+import { ArticleCard } from "@/components/article-card";
 import { subjectAreas } from "./home";
 
 export type JournalPageType =
@@ -47,8 +49,8 @@ const ethicalTopics = [
 const pageMetadata: Record<JournalPageType, { title: string; kicker: string; summary: string }> = {
   about: { title: "About the Journal", kicker: "Purpose & Scope", summary: "An interdisciplinary academic home for rigorous inquiry into contemporary politics, society, and governance." },
   particulars: { title: "Journal Particulars", kicker: "Official Metadata", summary: "Key operational parameters, publisher details, publication frequency, and scope of the Journal of Politics, Society and Governance." },
-  "current-issue": { title: "Current Issue", kicker: "Inaugural Issue · Forthcoming", summary: "Volume 1, Issue 1 is planned for publication in January–March 2027. Article contents will be announced upon confirmation." },
-  archives: { title: "Journal Archive", kicker: "Issues & Publication Record", summary: "Browse issue information as it becomes available. The journal is preparing its inaugural issue." },
+  "current-issue": { title: "Current Issue", kicker: "Volume 1, Issue 1 · 2027", summary: "Explore published peer-reviewed research in Volume 1, Issue 1 (January–March 2027) of the Journal of Politics, Society and Governance." },
+  archives: { title: "Journal Archive", kicker: "Volume & Issue Records", summary: "Browse complete publication archives of the Journal of Politics, Society and Governance. Volume 1, Issue 1 is published and accessible." },
   "editorial-board": { title: "Editorial Board", kicker: "Editorial Leadership & Governance", summary: "Meet the Editor-in-Chief, Managing Editor, and Editorial Board members guiding the Journal of Politics, Society and Governance." },
   submissions: { title: "Submit Your Manuscript", kicker: "Information for Authors", summary: "The Journal of Politics, Society and Governance welcomes original research within its scope. Review submission guidelines below." },
   "author-guidelines": { title: "Author Guidelines", kicker: "Manuscript Preparation", summary: "Essential requirements, word limits, formatting, and double-blind review preparation for authors." },
@@ -556,32 +558,107 @@ function CurrentIssuePage() {
       <PageIntro {...pageMetadata["current-issue"]} />
       <ContentFrame
         aside={
-          <SideCard title="Issue Metadata">
-            <p className="font-editorial text-2xl text-[#1f314d]">Volume 1, Issue 1</p>
-            <p className="mt-1 text-sm text-[#62616a]">January–March 2027</p>
-            <div className="my-4 border-t border-[#d6cfc2]" />
-            <p className="text-xs leading-5 text-[#77736d]">
-              Inaugural issue in preparation by the Democratic Organisation for Civic Knowledge Foundation.
-            </p>
-          </SideCard>
+          <div className="space-y-4">
+            <SideCard title="Issue Metadata">
+              <div className="flex items-center justify-between border-b border-[#d6cfc2] pb-3">
+                <span className="font-editorial text-2xl font-bold text-[#1f314d]">Vol. 1, Issue 1</span>
+                <span className="rounded bg-[#e8e2d2] px-2.5 py-0.5 text-[0.68rem] font-bold uppercase tracking-wider text-[#a45a40] border border-[#d6cfc2]">
+                  Published
+                </span>
+              </div>
+              <p className="mt-3 text-sm text-[#454850] font-medium">January–March 2027</p>
+              <div className="my-3 border-t border-[#dfd7c9]" />
+              <dl className="space-y-2 text-xs">
+                <div className="flex justify-between text-[#62616a]">
+                  <dt>Total Articles:</dt>
+                  <dd className="font-bold text-[#1f314d]">4 Articles</dd>
+                </div>
+                <div className="flex justify-between text-[#62616a]">
+                  <dt>Page Range:</dt>
+                  <dd className="font-bold text-[#1f314d]">pp. 1–28</dd>
+                </div>
+                <div className="flex justify-between text-[#62616a]">
+                  <dt>Access Model:</dt>
+                  <dd className="font-bold text-[#1f314d]">Open Access</dd>
+                </div>
+                <div className="flex justify-between text-[#62616a]">
+                  <dt>Peer Review:</dt>
+                  <dd className="font-bold text-[#1f314d]">Double-Blind</dd>
+                </div>
+              </dl>
+              <p className="mt-4 pt-3 border-t border-[#dfd7c9] text-xs leading-5 text-[#77736d]">
+                Published by Democratic Organisation for Civic Knowledge Foundation, Visakhapatnam, Andhra Pradesh, India.
+              </p>
+            </SideCard>
+
+            <SideCard title="Issue Contents (Serial)">
+              <div className="space-y-2.5 text-xs">
+                {currentIssueArticles.map((art) => (
+                  <a
+                    key={art.id}
+                    href={`#article-${art.serialNumber}`}
+                    className="block text-[#1f314d] hover:text-[#a45a40] transition-colors leading-snug py-1 border-b border-[#dfd7c9] last:border-b-0"
+                  >
+                    <span className="font-mono text-[0.7rem] text-[#a45a40] font-bold block">
+                      Article {art.serialNumber} (pp. {art.pages})
+                    </span>
+                    <span className="font-medium line-clamp-2">{art.title}</span>
+                  </a>
+                ))}
+              </div>
+            </SideCard>
+
+            <SideCard title="Author Resources">
+              <div className="flex flex-col gap-2 text-xs">
+                <Link href="/author-guidelines" className="rule-link">Author Guidelines <ArrowRight size={13} /></Link>
+                <Link href="/submissions" className="rule-link">Submit a Manuscript <ArrowRight size={13} /></Link>
+                <Link href="/peer-review" className="rule-link">Peer Review Policy <ArrowRight size={13} /></Link>
+              </div>
+            </SideCard>
+          </div>
         }
       >
-        <div className="mb-8 flex items-center gap-3 border-b border-[#d6cfc2] pb-5">
-          <CalendarDays className="text-[#a45a40]" size={22} />
-          <div>
-            <p className="eyebrow text-[#a45a40]">Publication Status</p>
-            <p className="mt-1 text-sm font-semibold text-[#1f314d]">Forthcoming Inaugural Issue</p>
+        {/* Issue Hero Banner */}
+        <div className="mb-8 rounded-sm border border-[#d6cfc2] bg-[#f8f5ee] p-6 sm:p-7 shadow-xs">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f0ebd9] px-3 py-1 text-[0.7rem] font-bold uppercase tracking-wider text-[#a45a40] border border-[#dfd7c9]">
+                <CalendarDays size={13} /> Inaugural Issue · Volume 1, Issue 1
+              </span>
+              <h2 className="!mt-2 !mb-1 font-editorial text-3xl font-bold text-[#1f314d]">
+                Volume 1, Issue 1 (2027)
+              </h2>
+              <p className="!m-0 text-sm text-[#62616a]">
+                January–March 2027 · 4 Peer-Reviewed Research Articles · Pages 1–28
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="inline-block bg-[#1f314d] text-white px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xs shadow-xs">
+                Open Access
+              </span>
+            </div>
           </div>
+          <p className="mt-4 text-xs leading-6 text-[#53565e]">
+            The inaugural issue of the <em>Journal of Politics, Society and Governance (JPSG)</em> brings together original scholarship examining digital inclusion and traditional craft economies, environmental governance and judicial regulation in India, rural microfinance and women's empowerment through Self-Help Groups, and universal consciousness through Advaita Vedanta.
+          </p>
         </div>
 
-        <h2 className="!mt-0">Volume 1, Issue 1 · January–March 2027</h2>
-        <p>
-          The inaugural issue of the <em>Journal of Politics, Society and Governance</em> is scheduled for publication in the first quarter of 2027. Confirmed article titles, abstracts, and downloadable PDF papers will be published on this page upon release.
-        </p>
+        {/* Section Heading */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-2 border-b-2 border-[#1f314d] pb-2">
+          <h2 className="!m-0 font-editorial text-2xl font-bold text-[#1f314d]">
+            Table of Contents · Research Articles
+          </h2>
+          <span className="font-mono text-xs text-[#7a766e]">
+            Serial Order: Articles 01 – 04
+          </span>
+        </div>
 
-        <NoteBox title="No Placeholder Articles Displayed">
-          This website intentionally presents true publication status and does not display mock or sample articles. Verified DOIs and article PDF downloads will become accessible upon official release.
-        </NoteBox>
+        {/* Serial-wise Articles */}
+        <div className="space-y-6">
+          {currentIssueArticles.map((article) => (
+            <ArticleCard key={article.id} article={article} />
+          ))}
+        </div>
       </ContentFrame>
     </>
   );
@@ -594,24 +671,75 @@ function ArchivesPage() {
       <ContentFrame aside={<Sidebar label="Browse Journal" />}>
         <h2 className="!mt-0">Journal Archives</h2>
         <p>
-          The <em>Journal of Politics, Society and Governance</em> publishes four quarterly issues annually. The public archive will document all published volumes upon the release of Volume 1, Issue 1 in 2027.
+          The <em>Journal of Politics, Society and Governance</em> publishes quarterly. Below is the permanent public archive of all published volumes and issues.
         </p>
 
-        <div className="mt-8 border border-[#d6cfc2] bg-[#f3f0e9] shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#d6cfc2] p-6">
+        {/* Volume 1 Box */}
+        <div className="mt-8 border border-[#d6cfc2] bg-[#f8f5ee] shadow-sm rounded-sm overflow-hidden">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#dfd7c9] bg-[#f2ece0] p-6">
             <div>
-              <p className="eyebrow text-[#a45a40]">2027 · Inaugural Volume</p>
-              <h2 className="!mt-1 !mb-0 text-2xl font-editorial text-[#1f314d]">Volume 1, Issue 1</h2>
-              <p className="mt-1 text-sm text-[#676660]">January–March 2027</p>
+              <p className="eyebrow text-[#a45a40]">Volume 1 (2027) · Published</p>
+              <h3 className="!mt-1 !mb-0 font-editorial text-2xl font-bold text-[#1f314d]">
+                Volume 1, Issue 1
+              </h3>
+              <p className="mt-1 text-xs text-[#676660]">January–March 2027 · 4 Articles · Pages 1–28</p>
             </div>
-            <span className="border border-[#b27a60] px-3 py-1 text-[0.67rem] font-bold uppercase tracking-wider text-[#965438] bg-[#f7ede8]">
-              Forthcoming
-            </span>
+            <Link
+              href="/current-issue"
+              className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-xs font-bold shadow-xs"
+            >
+              <span>View Full Issue</span>
+              <ArrowRight size={14} />
+            </Link>
           </div>
+
           <div className="p-6">
-            <p className="!m-0 text-sm leading-6 text-[#53565e]">
-              Article metadata, structured XML, and full-text PDF downloads will be added upon publication.
-            </p>
+            <h4 className="font-editorial text-base font-bold text-[#1f314d] mb-4">
+              Published Articles (Serial Order):
+            </h4>
+            <div className="divide-y divide-[#dfd7c9] border-y border-[#dfd7c9]">
+              {currentIssueArticles.map((art) => (
+                <div key={art.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono text-[0.68rem] font-bold text-[#a45a40] uppercase">
+                        Article {art.serialNumber}
+                      </span>
+                      <span className="text-[#999] text-xs">·</span>
+                      <span className="text-xs text-[#6e6a62] font-mono">Pages {art.pages}</span>
+                    </div>
+                    <Link
+                      href={`/current-issue#article-${art.serialNumber}`}
+                      className="font-editorial font-bold text-base text-[#1f314d] hover:text-[#a45a40] transition-colors line-clamp-2"
+                    >
+                      {art.title}
+                    </Link>
+                    <p className="!m-0 text-xs text-[#5e616b] mt-1">
+                      {art.authors.map((a) => a.name).join(", ")} — {art.authors[0]?.institution}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a
+                      href={art.pdfUrl}
+                      download
+                      className="btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs"
+                    >
+                      <Download size={13} />
+                      <span>PDF</span>
+                    </a>
+                    <a
+                      href={art.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold"
+                    >
+                      <span>View</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </ContentFrame>

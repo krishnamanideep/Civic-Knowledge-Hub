@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowDown, ArrowRight, ArrowUpRight, BookOpenText, CalendarDays, Globe2, Scale, FileText, FileDown, Download } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, BookOpenText, CalendarDays, Globe2, Scale, FileText, FileDown, Download, ExternalLink } from "lucide-react";
+import { currentIssueArticles } from "../data/articles";
 
 export const subjectAreas = [
   "Political Science and Public Administration",
@@ -47,17 +48,20 @@ export default function Home() {
         </div>
         <aside className="relative md:ml-auto md:w-full md:max-w-[360px]">
           <div className="absolute -right-5 -top-5 h-20 w-20 border-r border-t border-[#bf8972]" aria-hidden="true" />
-          <div className="border border-[#d0c8ba] bg-[#efede6] p-6 sm:p-8">
+          <div className="border border-[#d0c8ba] bg-[#efede6] p-6 sm:p-8 shadow-xs">
             <div className="flex items-center justify-between border-b border-[#d2c9bb] pb-4">
-              <span className="eyebrow">Forthcoming issue</span>
-              <span className="h-2 w-2 rounded-full bg-[#b5684d]" aria-hidden="true" />
+              <span className="eyebrow flex items-center gap-1.5 text-emerald-800 font-bold">
+                <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" aria-hidden="true" />
+                Current issue · Published
+              </span>
+              <span className="text-[0.7rem] uppercase tracking-wider font-semibold text-[#868077]">Vol 1 · No 1</span>
             </div>
             <p className="mt-7 font-editorial text-[2.8rem] leading-none tracking-tight text-[#263c5d]">01<span className="text-[#a45a40]">/</span>01</p>
             <h2 className="mt-4 font-editorial text-2xl font-semibold text-[#263c5d]">Volume 1, Issue 1</h2>
-            <p className="mt-1 text-sm text-[#676660]">January–March 2027</p>
+            <p className="mt-1 text-sm font-medium text-[#676660]">January–March 2027</p>
             <div className="my-6 border-t border-[#d2c9bb]" />
-            <p className="text-sm leading-6 text-[#5b5c62]">The inaugural issue is planned for 2027. Article contents and publication details will be announced when confirmed.</p>
-            <Link href="/current-issue" className="rule-link mt-6">Issue information <ArrowRight size={15} /></Link>
+            <p className="text-sm leading-6 text-[#5b5c62]">Inaugural issue with 4 peer-reviewed research articles across Digital Inclusion, Environmental Governance, Microfinance & Advaitic Philosophy.</p>
+            <Link href="/current-issue" className="rule-link mt-6 font-bold text-[#a45a40]">Explore 4 Published Articles <ArrowRight size={15} /></Link>
           </div>
           <p className="mt-4 text-right text-[.65rem] uppercase tracking-[.14em] text-[#868077]">Research · Reflection · Public purpose</p>
         </aside>
@@ -76,6 +80,98 @@ export default function Home() {
               <div><p className="font-editorial text-lg">{title}</p><p className="text-xs text-[#d6d7da]">{text}</p></div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Featured Current Issue Section */}
+      <section className="border-b border-[#d8cfc0] bg-[#fbf9f4] py-14 sm:py-20" aria-label="Current issue articles">
+        <div className="page-wrap">
+          <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
+                <p className="eyebrow text-emerald-800 font-bold">Latest Publication · Inaugural Issue</p>
+              </div>
+              <h2 className="font-editorial text-3xl font-semibold text-[#213858] sm:text-4xl">
+                Volume 1, Issue 1 (January–March 2027)
+              </h2>
+              <p className="mt-2 text-sm text-[#5f6368] max-w-2xl">
+                Four peer-reviewed original research articles published serial-wise under open-access with full-text PDFs.
+              </p>
+            </div>
+            <Link
+              href="/current-issue"
+              className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold shrink-0 self-start md:self-auto"
+            >
+              Full Issue, Abstracts & Citations <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="space-y-4">
+            {currentIssueArticles.map((art) => (
+              <div
+                key={art.id}
+                className="group relative border border-[#d8cfc0] bg-[#f8f5ee] hover:bg-white p-5 sm:p-6 transition-all shadow-xs hover:shadow-sm rounded-sm"
+              >
+                <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2 border-b border-[#e5dfd4] pb-3 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="inline-flex items-center justify-center bg-[#213858] text-[#f6f3eb] font-mono font-bold text-xs px-2.5 py-0.5 rounded-xs">
+                      ARTICLE {art.serialNumber}
+                    </span>
+                    <span className="text-xs uppercase tracking-wider font-semibold text-[#a45a40]">
+                      {art.section}
+                    </span>
+                  </div>
+                  <div className="text-xs font-mono text-[#77736d]">
+                    Pages {art.pages} · {art.volume}, {art.issue} ({art.year})
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
+                  <div>
+                    <h3 className="font-editorial text-xl sm:text-2xl font-semibold text-[#213858] leading-snug group-hover:text-[#a45a40] transition-colors">
+                      <Link href="/current-issue">
+                        {art.title}
+                      </Link>
+                    </h3>
+                    <p className="mt-2 text-sm font-medium text-[#3e424c]">
+                      {art.authors.map((a) => a.name).join(", ")}
+                      <span className="text-xs font-normal text-[#6f727a] ml-2">
+                        — {art.authors[0].institution}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 pt-1 md:pt-0">
+                    <a
+                      href={art.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#213858] bg-[#ebe6db] hover:bg-[#213858] hover:text-[#f6f3eb] rounded-xs border border-[#cfc6b5] transition-colors"
+                      title="Read PDF in browser"
+                    >
+                      <ExternalLink size={13} /> View
+                    </a>
+                    <a
+                      href={art.pdfUrl}
+                      download
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#a45a40] hover:bg-[#8e4932] rounded-xs shadow-xs transition-colors"
+                      title="Download full PDF"
+                    >
+                      <Download size={13} /> PDF
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex justify-between items-center text-xs text-[#6e727b] pt-4 border-t border-[#e2dacf]">
+            <span>ISSN: XXXX-XXXX (Print) · ISSN: XXXX-XXXX (Online)</span>
+            <Link href="/archives" className="rule-link font-semibold">
+              Browse Journal Archives <ArrowRight size={13} />
+            </Link>
+          </div>
         </div>
       </section>
 
