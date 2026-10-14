@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowDown, ArrowRight, ArrowUpRight, BookOpenText, CalendarDays, Globe2, Scale } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, BookOpenText, CalendarDays, Globe2, Scale, FileText, FileDown, Download } from "lucide-react";
 
 export const subjectAreas = [
   "Political Science and Public Administration",
@@ -131,6 +131,28 @@ export default function Home() {
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3">
             <Link href="/author-guidelines" className="rule-link">Author guidelines <ArrowRight size={15} /></Link>
             <Link href="/peer-review" className="rule-link">Review process <ArrowRight size={15} /></Link>
+          </div>
+
+          <div className="mt-6 pt-5 border-t border-[#dfd7c9]">
+            <span className="eyebrow text-[#a45a40] text-[0.68rem] block mb-2 font-bold">Author Downloads:</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <a
+                href="/downloads/JPSG_First_Page_Template.docx"
+                download="JPSG_First_Page_Template.docx"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1f314d] bg-[#f5f2eb] hover:bg-[#eae4d5] px-3 py-2 rounded-sm border border-[#d6cfc2] shadow-xs transition-colors"
+              >
+                <FileText size={13} className="text-[#a45a40]" /> First Page Template (.docx)
+                <Download size={12} className="text-[#77736d]" />
+              </a>
+              <a
+                href="/downloads/JPSG_Manuscript_Template.docx"
+                download="JPSG_Manuscript_Template.docx"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1f314d] bg-[#f5f2eb] hover:bg-[#eae4d5] px-3 py-2 rounded-sm border border-[#d6cfc2] shadow-xs transition-colors"
+              >
+                <FileDown size={13} className="text-[#a45a40]" /> Manuscript Template (.docx)
+                <Download size={12} className="text-[#77736d]" />
+              </a>
+            </div>
           </div>
         </div>
       </section>

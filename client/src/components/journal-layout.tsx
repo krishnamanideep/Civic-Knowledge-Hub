@@ -144,6 +144,17 @@ export function JournalLayout({ children }: { children: ReactNode }) {
                   </Link>
                 ))}
               </div>
+              <div className="mt-4 pt-3 border-t border-[#d8d0c2] text-xs">
+                <span className="font-bold text-[#1f314d] block mb-1">Author Downloads:</span>
+                <div className="flex flex-col gap-1">
+                  <a href="/downloads/JPSG_First_Page_Template.docx" download="JPSG_First_Page_Template.docx" className="text-[#a45a40] hover:underline font-medium">
+                    ↓ First Page Template (.docx)
+                  </a>
+                  <a href="/downloads/JPSG_Manuscript_Template.docx" download="JPSG_Manuscript_Template.docx" className="text-[#a45a40] hover:underline font-medium">
+                    ↓ Manuscript Template (.docx)
+                  </a>
+                </div>
+              </div>
             </div>
 
             <div>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { ArrowRight, CalendarDays, Check, FileText, Mail, MapPin, Phone, Printer, ChevronDown, ChevronUp, BookOpen, ShieldCheck, HelpCircle } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, FileText, Mail, MapPin, Phone, Printer, ChevronDown, ChevronUp, BookOpen, ShieldCheck, HelpCircle, Download, FileDown, ExternalLink } from "lucide-react";
 import { ContentFrame, NoteBox, PageIntro, SideCard } from "@/components/journal-layout";
+import { ManuscriptTemplatesSection } from "@/components/manuscript-templates";
 import { subjectAreas } from "./home";
 
 export type JournalPageType =
@@ -19,7 +20,7 @@ export type JournalPageType =
   | "not-found";
 
 function getInitials(name: string) {
-  const clean = name.replace(/^(Dr\.|Prof\.|Mr\.|Mrs\.|Ms\.)\s*/i, "").trim();
+  const clean = name.replace(/^(?:(Dr|Prof|Mr|Mrs|Ms)\.?\s*)+/i, "").trim();
   const parts = clean.split(/\s+/);
   if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -77,6 +78,29 @@ function Sidebar({ label = "Essential Pages" }: { label?: string }) {
           </Link>
         ))}
       </div>
+
+      <div className="mt-5 pt-4 border-t border-[#d6cfc2]">
+        <span className="eyebrow text-[#a45a40] text-[0.68rem] block mb-2 font-bold">Author Templates</span>
+        <div className="space-y-2">
+          <a
+            href="/downloads/JPSG_First_Page_Template.docx"
+            download="JPSG_First_Page_Template.docx"
+            className="flex items-center justify-between text-xs font-semibold text-[#1f314d] hover:text-[#a45a40] transition-colors bg-[#ece6d8] p-2 rounded-sm"
+          >
+            <span className="flex items-center gap-1.5"><FileText size={13} className="text-[#a45a40]" /> First Page Template</span>
+            <Download size={13} />
+          </a>
+          <a
+            href="/downloads/JPSG_Manuscript_Template.docx"
+            download="JPSG_Manuscript_Template.docx"
+            className="flex items-center justify-between text-xs font-semibold text-[#1f314d] hover:text-[#a45a40] transition-colors bg-[#ece6d8] p-2 rounded-sm"
+          >
+            <span className="flex items-center gap-1.5"><FileDown size={13} className="text-[#a45a40]" /> Manuscript Template</span>
+            <Download size={13} />
+          </a>
+        </div>
+      </div>
+
       <p className="mt-4 text-xs leading-5 text-[#77736d]">
         Published by the Democratic Organisation for Civic Knowledge Foundation, Visakhapatnam, Andhra Pradesh, India.
       </p>
@@ -225,6 +249,7 @@ function BoardPage() {
   ];
 
   const boardMembers = [
+    // --- Professors ---
     {
       name: "Dr. Peteti Premanandam",
       role: "Editorial Board Member",
@@ -240,6 +265,27 @@ function BoardPage() {
       department: "Department of Anthropology",
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
       email: "dr.anthro.au@gmail.com",
+    },
+    {
+      name: "Prof. Dr. Petikam Sailaja",
+      role: "Editorial Board Member",
+      designation: "Professor of Law & Research Supervisor",
+      department: "Director, Centre for Lifelong Learning · Saveetha School of Law",
+      institution: "Saveetha Institute of Medical and Technical Sciences (SIMATS), Chennai, Tamil Nadu, India",
+      email: "sailaja.petikam@gmail.com",
+      orcid: "https://orcid.org/0000-0001-5238-6230",
+    },
+    // --- Assistant Professors ---
+    {
+      name: "Dr. SM. Azizunisaa Begum",
+      role: "Editorial Board Member",
+      designation: "Assistant Professor & Research Supervisor",
+      qualifications: "M.A., LL.M., Ph.D. (Human Rights)",
+      department: "Department of Legal Studies, School of Law",
+      institution: "Vels Institute of Science, Technology & Advanced Studies (VISTAS), Pallavaram, Chennai, Tamil Nadu, India",
+      note: "State Executive Member, Human Rights Council, Andhra Pradesh",
+      email: "dr.aziza.sm@gmail.com",
+      secondaryEmail: "azizunnisaa.law@velsuniv.ac.in",
     },
     {
       name: "Dr. K. Satyam Narayana",
@@ -265,6 +311,7 @@ function BoardPage() {
       institution: "Krishna University",
       email: "valluripr@gmail.com",
     },
+    // --- Faculty ---
     {
       name: "Dr. Chippada Seshagiri Rao",
       role: "Editorial Board Member",
@@ -341,7 +388,7 @@ function BoardPage() {
 
         <h2 className="mt-12">Editorial Board Members</h2>
         <p>
-          Our Editorial Board brings together distinguished faculty and researchers spanning political science, public administration, anthropology, philosophy, economics, and management studies:
+          Our Editorial Board brings together distinguished faculty and researchers spanning political science, law and human rights, public administration, anthropology, philosophy, economics, and management studies:
         </p>
 
         <div className="mt-6 grid gap-6 sm:grid-cols-2">
@@ -354,11 +401,20 @@ function BoardPage() {
                 <div className="min-w-0 flex-1">
                   <p className="eyebrow text-[#a45a40] text-[0.68rem]">{member.role}</p>
                   <h3 className="!mt-0.5 !mb-1 text-xl font-editorial font-bold text-[#1f314d]">{member.name}</h3>
+                  {"qualifications" in member && member.qualifications && (
+                    <p className="!mt-0 !mb-1 text-xs font-serif italic text-[#6e6a62]">{member.qualifications}</p>
+                  )}
                   {member.designation && (
                     <p className="text-xs font-semibold uppercase tracking-wider text-[#77736d] mb-1">{member.designation}</p>
                   )}
                   <p className="!mt-1 !mb-0 text-sm leading-5 font-medium text-[#2f3e58]">{member.department}</p>
-                  {member.institution && <p className="!mt-0 !mb-2 text-xs leading-5 text-[#676660]">{member.institution}</p>}
+                  {member.institution && <p className="!mt-0 !mb-1 text-xs leading-5 text-[#676660]">{member.institution}</p>}
+
+                  {"note" in member && member.note && (
+                    <p className="!mt-2 !mb-1 text-[0.72rem] leading-4 text-[#8a422b] font-medium bg-[#ece4d5] px-2 py-1 rounded-sm border border-[#dbd1bf]">
+                      {member.note}
+                    </p>
+                  )}
 
                   {"address" in member && (member as { address?: string }).address && (
                     <p className="!mt-2 !mb-2 text-xs leading-4 text-[#676660] flex items-start gap-1.5 bg-[#eae5d8] p-2 rounded-sm border border-[#d8d1c2]">
@@ -369,14 +425,38 @@ function BoardPage() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-[#d8d1c2]">
-                {member.email && (
-                  <p className="!m-0 text-xs font-medium text-[#1f314d] flex items-center gap-1.5">
-                    <Mail size={12} className="shrink-0 text-[#a45a40]" />
-                    <a href={`mailto:${member.email}`} className="hover:underline text-[#1f314d]">
-                      {member.email}
-                    </a>
-                  </p>
+              <div className="mt-4 pt-3 border-t border-[#d8d1c2] flex flex-wrap items-center justify-between gap-y-2 gap-x-3">
+                <div className="flex flex-col gap-1 text-xs font-medium text-[#1f314d]">
+                  {member.email && (
+                    <span className="flex items-center gap-1.5">
+                      <Mail size={12} className="shrink-0 text-[#a45a40]" />
+                      <a href={`mailto:${member.email}`} className="hover:underline text-[#1f314d]">
+                        {member.email}
+                      </a>
+                    </span>
+                  )}
+                  {"secondaryEmail" in member && member.secondaryEmail && (
+                    <span className="flex items-center gap-1.5 text-[0.7rem] text-[#676660]">
+                      <Mail size={11} className="shrink-0 text-[#77736d]" />
+                      <a href={`mailto:${member.secondaryEmail}`} className="hover:underline text-[#555861]">
+                        {member.secondaryEmail}
+                      </a>
+                    </span>
+                  )}
+                </div>
+
+                {"orcid" in member && member.orcid && (
+                  <a
+                    href={member.orcid}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-[#527d24] hover:underline font-semibold"
+                    title="View ORCID Record"
+                  >
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#a6ce39] text-white text-[9px] font-bold">iD</span>
+                    <span>ORCID</span>
+                    <ExternalLink size={11} />
+                  </a>
                 )}
               </div>
             </div>
@@ -559,6 +639,34 @@ function SubmissionPage() {
               </a>
             </SideCard>
 
+            <SideCard title="Download Templates">
+              <p className="text-xs text-[#5b5c62] mb-3 leading-5">
+                Download required official templates before submitting:
+              </p>
+              <div className="space-y-2">
+                <a
+                  href="/downloads/JPSG_First_Page_Template.docx"
+                  download="JPSG_First_Page_Template.docx"
+                  className="flex items-center justify-between text-xs font-semibold text-[#1f314d] hover:text-[#a45a40] transition-colors bg-[#ece6d8] p-2.5 rounded-sm border border-[#d6cfc2]"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <FileText size={13} className="text-[#a45a40]" /> First Page Template (.docx)
+                  </span>
+                  <Download size={13} />
+                </a>
+                <a
+                  href="/downloads/JPSG_Manuscript_Template.docx"
+                  download="JPSG_Manuscript_Template.docx"
+                  className="flex items-center justify-between text-xs font-semibold text-[#1f314d] hover:text-[#a45a40] transition-colors bg-[#ece6d8] p-2.5 rounded-sm border border-[#d6cfc2]"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <FileDown size={13} className="text-[#a45a40]" /> Manuscript Template (.docx)
+                  </span>
+                  <Download size={13} />
+                </a>
+              </div>
+            </SideCard>
+
             <SideCard title="Author Resources">
               <div className="flex flex-col gap-2 text-xs">
                 <Link href="/author-guidelines" className="rule-link">Author Guidelines <ArrowRight size={13} /></Link>
@@ -575,12 +683,15 @@ function SubmissionPage() {
           The <em>Journal of Politics, Society and Governance</em> invites scholars, faculty members, policy researchers, and doctoral candidates to submit original research papers within the interdisciplinary scope of political science, public administration, public policy, governance, and social studies.
         </p>
 
+        {/* Templates Download Banner */}
+        <ManuscriptTemplatesSection />
+
         <div className="my-6 border border-[#a45a40]/30 bg-[#f9f5ee] p-6 rounded-sm shadow-sm">
           <h3 className="!mt-0 font-sans text-lg font-bold text-[#1f314d] flex items-center gap-2">
             <Mail size={20} className="text-[#a45a40]" /> Official Submission Email Channel
           </h3>
           <p className="text-sm text-[#454952] leading-6 mt-2">
-            Authors should email their complete manuscript file (Microsoft Word `.doc`/`.docx` format) along with a cover letter directly to our official editorial desk:
+            Authors should email their completed manuscript files (First Page Template file and Anonymized Main Manuscript file in Microsoft Word `.docx` format) along with a cover letter directly to our official editorial desk:
           </p>
           <div className="mt-4 p-4 bg-[#efe8db] border border-[#d6cfc2] rounded-sm flex items-center justify-between flex-wrap gap-3">
             <div>
@@ -628,8 +739,8 @@ function SubmissionPage() {
 
         <h2>Submission Preparation Checklist</h2>
         <ul className="list-disc pl-5 space-y-2 text-sm text-[#42454d]">
-          <li><strong>Anonymized Manuscript File:</strong> Prepare a main manuscript document containing manuscript title, abstract (200–250 words), keywords (5–7), main body, tables, figures, and references, with author identifying details removed for double-blind review.</li>
-          <li><strong>Title Page File:</strong> A separate cover page including complete author names, designations, institutional department & university affiliations, ORCID IDs (if available), and corresponding author email address.</li>
+          <li><strong>Template 1 — First Page File:</strong> A separate document containing manuscript title, full author names, designations, institutional affiliations, ORCID IDs (if available), corresponding author contact email, and abstract (200–250 words) with 5–7 keywords.</li>
+          <li><strong>Template 2 — Anonymized Main Manuscript File:</strong> The complete manuscript text (Title, Abstract, Introduction, Literature Review, Methodology, Analysis/Discussion, Conclusion, References, and Appendices) formatted using our two-column template. All identifying author names and affiliations must be completely removed for double-blind peer review.</li>
           <li><strong>Cover Letter:</strong> A brief letter confirming that the work is original, has not been published elsewhere, and is not currently under evaluation by another journal.</li>
         </ul>
       </ContentFrame>
@@ -642,22 +753,58 @@ function GuidelinesPage() {
     <>
       <PageIntro {...pageMetadata["author-guidelines"]} />
       <ContentFrame aside={<Sidebar label="Guidelines Checklist" />}>
-        <h2 className="!mt-0">Manuscript Requirements</h2>
-        <p>Manuscripts submitted to the journal must adhere to the following standards:</p>
-        <ul className="list-none !pl-0 space-y-2">
+        <h2 className="!mt-0">Author Guidelines & Manuscript Preparation</h2>
+        <p>
+          The <em>Journal of Politics, Society and Governance</em> adheres to rigorous scholarly standards. All submissions must follow our formatting instructions and double-blind peer-review guidelines. Authors are required to download and format their papers using the official templates provided below:
+        </p>
+
+        {/* Templates Download Section */}
+        <ManuscriptTemplatesSection />
+
+        <h2>Manuscript Preparation Standards</h2>
+        <ul className="list-none !pl-0 space-y-2.5">
           {[
-            "Original scholarly research not submitted elsewhere.",
-            "Prepared for double-blind peer review (anonymized title page).",
-            "Structured abstract (200–250 words) and 5–7 keywords.",
-            "Complete institutional affiliations and author contact details.",
-            "Strict adherence to standard academic referencing styles.",
+            "Original scholarly research that has not been published or submitted simultaneously elsewhere.",
+            "Prepared strictly for double-blind peer review: author details, institutional names, and acknowledgments must be omitted from the Main Manuscript.",
+            "Complete author details, academic designations, institutional affiliations, and ORCID identifiers must only appear on the First Page / Title Page document.",
+            "Structured abstract (200–250 words) with 5–7 keywords separated by commas.",
+            "Typography & Layout: Times New Roman, 10 pt font, 1.15 line spacing, full justification, 2-column format.",
+            "References and in-text citations formatted in standard academic citation styles (APA, Chicago, or Harvard) with hyperlinked DOIs wherever available.",
           ].map((item) => (
             <li key={item} className="flex items-start gap-3 text-sm text-[#42454d]">
               <Check size={16} className="mt-1 shrink-0 text-[#a45a40]" />
-              {item}
+              <span>{item}</span>
             </li>
           ))}
         </ul>
+
+        <h2 className="mt-10">Two-File Submission Process</h2>
+        <div className="my-5 grid gap-4 sm:grid-cols-2">
+          <div className="border border-[#d6cfc2] bg-[#f7f4ec] p-5 rounded-sm shadow-xs">
+            <h3 className="!mt-0 !mb-2 text-base font-bold text-[#1f314d] flex items-center gap-2">
+              <FileText size={16} className="text-[#a45a40]" /> File 1: First Page (Title Page)
+            </h3>
+            <p className="!m-0 text-xs leading-5 text-[#53565e]">
+              Use the <strong>First Page Template</strong> to submit author details, affiliations, corresponding author email, ORCID IDs, and abstract. This file is retained by the editorial office and not sent to peer reviewers.
+            </p>
+          </div>
+          <div className="border border-[#d6cfc2] bg-[#f7f4ec] p-5 rounded-sm shadow-xs">
+            <h3 className="!mt-0 !mb-2 text-base font-bold text-[#1f314d] flex items-center gap-2">
+              <FileDown size={16} className="text-[#a45a40]" /> File 2: Anonymized Manuscript
+            </h3>
+            <p className="!m-0 text-xs leading-5 text-[#53565e]">
+              Use the <strong>Main Manuscript Template</strong> (two-column, Times New Roman 10pt) for the complete body of the paper. Ensure all author identities and acknowledgments are completely stripped out for double-blind evaluation.
+            </p>
+          </div>
+        </div>
+
+        <NoteBox title="Ready to Submit?">
+          Both documents (First Page file and Main Manuscript file) in Microsoft Word format (.docx) should be emailed to{" "}
+          <a href="mailto:jpsg@docknowledge.org" className="font-semibold underline text-[#1f314d]">
+            jpsg@docknowledge.org
+          </a>{" "}
+          along with your brief cover letter.
+        </NoteBox>
       </ContentFrame>
     </>
   );
