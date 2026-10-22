@@ -338,6 +338,14 @@ function BoardPage() {
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
       email: "pavankumardora@gmail.com",
     },
+    // --- Research Staff / Scholars ---
+    {
+      name: "Bhumireddy Kusuma",
+      role: "Editorial Board Member",
+      designation: "Research Assistant",
+      institution: "Northwestern University",
+      email: "kusumabhumireddy0@gmail.com",
+    },
   ];
 
   return (
@@ -571,11 +579,11 @@ function CurrentIssuePage() {
               <dl className="space-y-2 text-xs">
                 <div className="flex justify-between text-[#62616a]">
                   <dt>Total Articles:</dt>
-                  <dd className="font-bold text-[#1f314d]">4 Articles</dd>
+                  <dd className="font-bold text-[#1f314d]">5 Articles</dd>
                 </div>
                 <div className="flex justify-between text-[#62616a]">
                   <dt>Page Range:</dt>
-                  <dd className="font-bold text-[#1f314d]">pp. 1–28</dd>
+                  <dd className="font-bold text-[#1f314d]">pp. 1–31</dd>
                 </div>
                 <div className="flex justify-between text-[#62616a]">
                   <dt>Access Model:</dt>
@@ -594,16 +602,16 @@ function CurrentIssuePage() {
             <SideCard title="Issue Contents (Serial)">
               <div className="space-y-2.5 text-xs">
                 {currentIssueArticles.map((art) => (
-                  <a
+                  <Link
                     key={art.id}
-                    href={`#article-${art.serialNumber}`}
+                    href={`/article/${art.slug}`}
                     className="block text-[#1f314d] hover:text-[#a45a40] transition-colors leading-snug py-1 border-b border-[#dfd7c9] last:border-b-0"
                   >
                     <span className="font-mono text-[0.7rem] text-[#a45a40] font-bold block">
                       Article {art.serialNumber} (pp. {art.pages})
                     </span>
                     <span className="font-medium line-clamp-2">{art.title}</span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </SideCard>
@@ -629,7 +637,7 @@ function CurrentIssuePage() {
                 Volume 1, Issue 1 (2027)
               </h2>
               <p className="!m-0 text-sm text-[#62616a]">
-                January–March 2027 · 4 Peer-Reviewed Research Articles · Pages 1–28
+                January–March 2027 · 5 Peer-Reviewed Research Articles · Pages 1–31
               </p>
             </div>
             <div className="text-right">
@@ -639,7 +647,7 @@ function CurrentIssuePage() {
             </div>
           </div>
           <p className="mt-4 text-xs leading-6 text-[#53565e]">
-            The inaugural issue of the <em>Journal of Politics, Society and Governance (JPSG)</em> brings together original scholarship examining digital inclusion and traditional craft economies, environmental governance and judicial regulation in India, rural microfinance and women's empowerment through Self-Help Groups, and universal consciousness through Advaita Vedanta.
+            The inaugural issue of the <em>Journal of Politics, Society and Governance (JPSG)</em> brings together five original peer-reviewed research articles examining women's everyday micro-politics and body politics in resistance movements, universal consciousness in Advaita Vedanta, rural microfinance and women's self-help groups, environmental governance and judicial regulation in India, and technology and digital inclusion for traditional artisans.
           </p>
         </div>
 
@@ -649,7 +657,7 @@ function CurrentIssuePage() {
             Table of Contents · Research Articles
           </h2>
           <span className="font-mono text-xs text-[#7a766e]">
-            Serial Order: Articles 01 – 04
+            Serial Order: Articles 01 – 05
           </span>
         </div>
 
@@ -682,7 +690,7 @@ function ArchivesPage() {
               <h3 className="!mt-1 !mb-0 font-editorial text-2xl font-bold text-[#1f314d]">
                 Volume 1, Issue 1
               </h3>
-              <p className="mt-1 text-xs text-[#676660]">January–March 2027 · 4 Articles · Pages 1–28</p>
+              <p className="mt-1 text-xs text-[#676660]">January–March 2027 · 5 Articles · Pages 1–31</p>
             </div>
             <Link
               href="/current-issue"
@@ -709,7 +717,7 @@ function ArchivesPage() {
                       <span className="text-xs text-[#6e6a62] font-mono">Pages {art.pages}</span>
                     </div>
                     <Link
-                      href={`/current-issue#article-${art.serialNumber}`}
+                      href={`/article/${art.slug}`}
                       className="font-editorial font-bold text-base text-[#1f314d] hover:text-[#a45a40] transition-colors line-clamp-2"
                     >
                       {art.title}
@@ -719,9 +727,16 @@ function ArchivesPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      href={`/article/${art.slug}`}
+                      className="btn-secondary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold"
+                    >
+                      <span>Article</span>
+                      <ArrowRight size={12} />
+                    </Link>
                     <a
                       href={art.pdfUrl}
-                      download
+                      download={art.pdfUrl.split("/").pop() || "article.pdf"}
                       className="btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs"
                     >
                       <Download size={13} />

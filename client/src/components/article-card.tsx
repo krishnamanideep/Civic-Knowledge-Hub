@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Download, ExternalLink, FileText, Quote, ChevronDown, ChevronUp, Copy, Check, BookOpen } from "lucide-react";
+import { Link } from "wouter";
+import { Download, ExternalLink, Quote, ChevronDown, ChevronUp, Copy, Check, BookOpen, ArrowRight } from "lucide-react";
 import { type JournalArticle, getCitation } from "@/data/articles";
 
 export function ArticleCard({ article, defaultExpanded = false }: { article: JournalArticle; defaultExpanded?: boolean }) {
@@ -15,6 +16,8 @@ export function ArticleCard({ article, defaultExpanded = false }: { article: Jou
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const pdfFilename = article.pdfUrl.split("/").pop() || "article.pdf";
 
   return (
     <article
@@ -40,21 +43,22 @@ export function ArticleCard({ article, defaultExpanded = false }: { article: Jou
 
       {/* Title */}
       <h3 className="!mt-4 !mb-2.5 font-editorial text-2xl font-bold leading-snug text-[#1f314d]">
-        <a
-          href={article.pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href={`/article/${article.slug}`}
           className="hover:text-[#a45a40] transition-colors no-underline"
         >
           {article.title}
-        </a>
+        </Link>
       </h3>
 
       {/* Authors & Affiliations */}
-      <div className="my-3 space-y-1.5">
+      <div className="my-3 space-y-2">
         {article.authors.map((author) => (
           <div key={author.name} className="text-xs text-[#4b4e57]">
-            <span className="font-bold text-[#1f314d] text-sm">{author.name}</span>
+            <span className="font-bold text-[#1f314d] text-sm">
+              {author.name}
+              {author.isCorresponding ? " *" : ""}
+            </span>
             {author.isCorresponding && (
               <span className="ml-1 text-[0.68rem] font-medium text-[#a45a40] italic">
                 (Corresponding Author)
@@ -90,9 +94,15 @@ export function ArticleCard({ article, defaultExpanded = false }: { article: Jou
             {showAbstract ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
 
-          <span className="text-[0.7rem] font-mono text-[#8a857c]">
-            DOI: {article.doi}
-          </span>
+          {article.doi && !article.doi.includes("10.XXXXX") ? (
+            <span className="text-[0.7rem] font-mono text-[#8a857c]">
+              DOI: {article.doi}
+            </span>
+          ) : (
+            <span className="text-[0.7rem] font-mono text-[#8a857c]">
+              {article.volume}, {article.issue}
+            </span>
+          )}
         </div>
 
         {showAbstract && (
@@ -125,11 +135,18 @@ export function ArticleCard({ article, defaultExpanded = false }: { article: Jou
         <div className="flex flex-wrap items-center gap-2">
           <a
             href={article.pdfUrl}
-            download={`${article.serialNumber}_${article.title.slice(0, 30).replace(/[^a-zA-Z0-9]/g, "_")}.pdf`}
+            download={pdfFilename}
             className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-xs font-bold shadow-xs"
           >
             <Download size={13} /> Download Full PDF
           </a>
+          <Link
+            href={`/article/${article.slug}`}
+            className="btn-secondary inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold"
+          >
+            <span>Article Page</span>
+            <ArrowRight size={12} />
+          </Link>
           <a
             href={article.pdfUrl}
             target="_blank"
@@ -197,7 +214,7 @@ export function ArticleCard({ article, defaultExpanded = false }: { article: Jou
 
             <div className="mt-4 flex items-center justify-between">
               <span className="text-[0.7rem] text-[#7d7971]">
-                Volume 1 · Issue 1 (2027)
+                {article.volume} · {article.issue} ({article.year})
               </span>
               <button
                 type="button"

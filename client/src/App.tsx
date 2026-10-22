@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import JournalPage from "@/pages/journal-pages";
+import ArticleDetailPage from "@/pages/article-detail";
 import { JournalLayout } from "@/components/journal-layout";
 
 function Router() {
@@ -23,6 +24,8 @@ function Router() {
         <Route path="/publication-ethics"><JournalPage page="publication-ethics" /></Route>
         <Route path="/faq"><JournalPage page="faq" /></Route>
         <Route path="/contact"><JournalPage page="contact" /></Route>
+        <Route path="/article/:slug"><ArticleDetailPage /></Route>
+        <Route path="/articles/:slug"><ArticleDetailPage /></Route>
         <Route><JournalPage page="not-found" /></Route>
       </Switch>
     </JournalLayout>

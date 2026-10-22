@@ -60,8 +60,8 @@ export default function Home() {
             <h2 className="mt-4 font-editorial text-2xl font-semibold text-[#263c5d]">Volume 1, Issue 1</h2>
             <p className="mt-1 text-sm font-medium text-[#676660]">January–March 2027</p>
             <div className="my-6 border-t border-[#d2c9bb]" />
-            <p className="text-sm leading-6 text-[#5b5c62]">Inaugural issue with 4 peer-reviewed research articles across Digital Inclusion, Environmental Governance, Microfinance & Advaitic Philosophy.</p>
-            <Link href="/current-issue" className="rule-link mt-6 font-bold text-[#a45a40]">Explore 4 Published Articles <ArrowRight size={15} /></Link>
+            <p className="text-sm leading-6 text-[#5b5c62]">Inaugural issue with 5 peer-reviewed research articles across Resistance & Body Politics, Advaitic Philosophy, Microfinance & Women SHGs, Environmental Governance, and Digital Inclusion.</p>
+            <Link href="/current-issue" className="rule-link mt-6 font-bold text-[#a45a40]">Explore 5 Published Articles <ArrowRight size={15} /></Link>
           </div>
           <p className="mt-4 text-right text-[.65rem] uppercase tracking-[.14em] text-[#868077]">Research · Reflection · Public purpose</p>
         </aside>
@@ -96,7 +96,7 @@ export default function Home() {
                 Volume 1, Issue 1 (January–March 2027)
               </h2>
               <p className="mt-2 text-sm text-[#5f6368] max-w-2xl">
-                Four peer-reviewed original research articles published serial-wise under open-access with full-text PDFs.
+                Five peer-reviewed original research articles published serial-wise under open-access with full-text PDFs.
               </p>
             </div>
             <Link
@@ -130,12 +130,12 @@ export default function Home() {
                 <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
                   <div>
                     <h3 className="font-editorial text-xl sm:text-2xl font-semibold text-[#213858] leading-snug group-hover:text-[#a45a40] transition-colors">
-                      <Link href="/current-issue">
+                      <Link href={`/article/${art.slug}`}>
                         {art.title}
                       </Link>
                     </h3>
                     <p className="mt-2 text-sm font-medium text-[#3e424c]">
-                      {art.authors.map((a) => a.name).join(", ")}
+                      {art.authors.map((a) => `${a.name}${a.isCorresponding ? " *" : ""}`).join(", ")}
                       <span className="text-xs font-normal text-[#6f727a] ml-2">
                         — {art.authors[0].institution}
                       </span>
@@ -143,6 +143,14 @@ export default function Home() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 pt-1 md:pt-0">
+                    <Link
+                      href={`/article/${art.slug}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#213858] bg-[#ebe6db] hover:bg-[#213858] hover:text-[#f6f3eb] rounded-xs border border-[#cfc6b5] transition-colors"
+                      title="View Article Details"
+                    >
+                      <span>Article</span>
+                      <ArrowRight size={12} />
+                    </Link>
                     <a
                       href={art.pdfUrl}
                       target="_blank"
@@ -154,7 +162,7 @@ export default function Home() {
                     </a>
                     <a
                       href={art.pdfUrl}
-                      download
+                      download={art.pdfUrl.split("/").pop() || "article.pdf"}
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#a45a40] hover:bg-[#8e4932] rounded-xs shadow-xs transition-colors"
                       title="Download full PDF"
                     >
