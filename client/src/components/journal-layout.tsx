@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowUpRight, Menu, X, Globe, Lock, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Menu, X, Globe } from "lucide-react";
 import { useJournalSettings } from "@/hooks/use-journal";
 
 export const navigation = [
@@ -16,30 +16,23 @@ export const navigation = [
   { label: "Publication ethics", href: "/publication-ethics" },
   { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },
-  { label: "Admin panel", href: "/admin" },
 ];
 
 function NavLink({ href, label, onNavigate }: { href: string; label: string; onNavigate?: () => void }) {
   const [location] = useLocation();
   const active = href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
-  const isAdmin = href === "/admin";
 
   return (
     <Link
       href={href}
       onClick={onNavigate}
-      className={`nav-link text-xs font-semibold transition-colors py-2 px-3 rounded flex items-center gap-1 ${
-        isAdmin
-          ? active
-            ? "text-white font-bold bg-[#1f314d] border-b-2 border-[#a45a40]"
-            : "text-[#1f314d] bg-[#eae4d5] hover:bg-[#ded7c5] font-bold"
-          : active
+      className={`nav-link text-xs font-semibold transition-colors py-2 px-3 rounded ${
+        active
           ? "text-[#1d3254] font-bold bg-[#e8e2d2] border-b-2 border-[#a45a40]"
           : "text-[#47484e] hover:bg-[#e4decb]"
       }`}
       aria-current={active ? "page" : undefined}
     >
-      {isAdmin && <Lock size={11} className="text-[#a45a40]" />}
       <span>{label}</span>
     </Link>
   );
@@ -204,10 +197,9 @@ export function JournalLayout({ children }: { children: ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="text-xs text-[#4b4d54] no-underline hover:text-[#a45a40] transition-colors flex items-center gap-1"
+                    className="text-xs text-[#4b4d54] no-underline hover:text-[#a45a40] transition-colors"
                   >
                     <span>{item.label}</span>
-                    {item.href === "/admin" && <Lock size={10} className="text-[#a45a40]" />}
                   </Link>
                 ))}
               </div>
@@ -297,10 +289,10 @@ export function JournalLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-4">
               <Link
                 href="/admin"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#ded7c7] hover:bg-[#d0c7b3] text-[#1f314d] font-bold text-xs transition-colors"
+                className="text-[#88837a] hover:text-[#1f314d] text-[11px] transition-colors"
+                title="Editor Login"
               >
-                <Lock size={11} className="text-[#a45a40]" />
-                <span>Editorial Admin Panel</span>
+                Editor Login
               </Link>
               <a
                 href="https://docknowledge.org"
