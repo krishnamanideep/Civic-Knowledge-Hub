@@ -1,7 +1,21 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowDown, ArrowRight, ArrowUpRight, BookOpenText, CalendarDays, Globe2, Scale, FileText, FileDown, Download, ExternalLink } from "lucide-react";
-import { currentIssueArticles } from "../data/articles";
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUpRight,
+  BookOpenText,
+  CalendarDays,
+  Globe2,
+  Scale,
+  FileText,
+  FileDown,
+  Download,
+  ExternalLink,
+  Lock,
+} from "lucide-react";
+import { currentIssueArticles as staticArticles } from "../data/articles";
+import { useArticles, usePeople, useJournalSettings } from "@/hooks/use-journal";
 
 export const subjectAreas = [
   "Political Science and Public Administration",
@@ -28,24 +42,64 @@ export const subjectAreas = [
 ];
 
 export default function Home() {
+  const { articles } = useArticles();
+  const { leadership } = usePeople();
+  const { settings } = useJournalSettings();
+
+  const journalTitle = settings?.journalTitle || "Journal of Politics, Society and Governance";
+  const volume = settings?.currentVolume || "Volume 1";
+  const issue = settings?.currentIssue || "Issue 1";
+  const year = settings?.currentYear || "2027";
+  const period = settings?.currentPeriod || "January–March 2027";
+  const activeAreas = settings?.subjectAreas && settings.subjectAreas.length > 0 ? settings.subjectAreas : subjectAreas;
+
   useEffect(() => {
-    document.title = "JPSG — Journal of Politics, Society and Governance";
+    document.title = `${settings?.journalAbbr || "JPSG"} — ${journalTitle}`;
     const description = document.querySelector('meta[name="description"]');
-    description?.setAttribute("content", "An interdisciplinary, peer-reviewed academic journal for scholarship on politics, society and governance.");
-  }, []);
+    description?.setAttribute(
+      "content",
+      "An interdisciplinary, peer-reviewed academic journal for scholarship on politics, society and governance."
+    );
+  }, [journalTitle, settings?.journalAbbr]);
+
   return (
     <div>
+      {/* Hero Section */}
       <section className="page-wrap grid min-h-[520px] items-center gap-10 py-12 md:grid-cols-[1.25fr_.75fr] md:py-16">
         <div className="enter">
-          <p className="eyebrow mb-6 flex items-center gap-2"><span className="inline-block h-px w-8 bg-[#a45a40]" />A scholarly forum for public life</p>
-          <h1 className="font-editorial max-w-3xl text-[clamp(2.1rem,4.8vw,4.6rem)] font-medium leading-[.95] tracking-[-.045em] text-[#213858]">Ideas for a<br /><em className="font-normal text-[#a45a40]">changing</em> society.</h1>
-          <p className="mt-7 max-w-xl text-base leading-7 text-[#565860] sm:text-lg sm:leading-8">The Journal of Politics, Society and Governance brings careful, interdisciplinary scholarship to the questions shaping democratic life, public institutions and social change.</p>
+          <p className="eyebrow mb-6 flex items-center gap-2">
+            <span className="inline-block h-px w-8 bg-[#a45a40]" />
+            A scholarly forum for public life
+          </p>
+          <h1 className="font-editorial max-w-3xl text-[clamp(2.1rem,4.8vw,4.6rem)] font-medium leading-[.95] tracking-[-.045em] text-[#213858]">
+            Ideas for a<br />
+            <em className="font-normal text-[#a45a40]">changing</em> society.
+          </h1>
+          <p className="mt-7 max-w-xl text-base leading-7 text-[#565860] sm:text-lg sm:leading-8">
+            The {journalTitle} brings careful, interdisciplinary scholarship to the questions shaping democratic life, public institutions and social change.
+          </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/current-issue" className="btn-primary inline-flex min-h-12 items-center justify-center gap-3 px-5 text-sm font-bold">Explore the current issue <ArrowRight size={16} /></Link>
-            <Link href="/submissions" className="btn-secondary inline-flex min-h-12 items-center justify-center gap-3 px-5 text-sm font-bold">For authors <ArrowUpRight size={15} /></Link>
+            <Link
+              href="/current-issue"
+              className="btn-primary inline-flex min-h-12 items-center justify-center gap-3 px-5 text-sm font-bold"
+            >
+              Explore the current issue <ArrowRight size={16} />
+            </Link>
+            <Link
+              href="/submissions"
+              className="btn-secondary inline-flex min-h-12 items-center justify-center gap-3 px-5 text-sm font-bold"
+            >
+              For authors <ArrowUpRight size={15} />
+            </Link>
           </div>
-          <a href="#journal-overview" className="mt-12 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.13em] text-[#77736d] no-underline hover:text-[#a45a40]"><ArrowDown size={14} /> Read about the journal</a>
+          <a
+            href="#journal-overview"
+            className="mt-12 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.13em] text-[#77736d] no-underline hover:text-[#a45a40]"
+          >
+            <ArrowDown size={14} /> Read about the journal
+          </a>
         </div>
+
         <aside className="relative md:ml-auto md:w-full md:max-w-[360px]">
           <div className="absolute -right-5 -top-5 h-20 w-20 border-r border-t border-[#bf8972]" aria-hidden="true" />
           <div className="border border-[#d0c8ba] bg-[#efede6] p-6 sm:p-8 shadow-xs">
@@ -54,30 +108,49 @@ export default function Home() {
                 <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" aria-hidden="true" />
                 Current issue · Published
               </span>
-              <span className="text-[0.7rem] uppercase tracking-wider font-semibold text-[#868077]">Vol 1 · No 1</span>
+              <span className="text-[0.7rem] uppercase tracking-wider font-semibold text-[#868077]">
+                {volume} · {issue}
+              </span>
             </div>
-            <p className="mt-7 font-editorial text-[2.8rem] leading-none tracking-tight text-[#263c5d]">01<span className="text-[#a45a40]">/</span>01</p>
-            <h2 className="mt-4 font-editorial text-2xl font-semibold text-[#263c5d]">Volume 1, Issue 1</h2>
-            <p className="mt-1 text-sm font-medium text-[#676660]">January–March 2027</p>
+            <p className="mt-7 font-editorial text-[2.8rem] leading-none tracking-tight text-[#263c5d]">
+              01<span className="text-[#a45a40]">/</span>01
+            </p>
+            <h2 className="mt-4 font-editorial text-2xl font-semibold text-[#263c5d]">
+              {volume}, {issue}
+            </h2>
+            <p className="mt-1 text-sm font-medium text-[#676660]">{period}</p>
             <div className="my-6 border-t border-[#d2c9bb]" />
-            <p className="text-sm leading-6 text-[#5b5c62]">Inaugural issue with 5 peer-reviewed research articles across Resistance & Body Politics, Advaitic Philosophy, Microfinance & Women SHGs, Environmental Governance, and Digital Inclusion.</p>
-            <Link href="/current-issue" className="rule-link mt-6 font-bold text-[#a45a40]">Explore 5 Published Articles <ArrowRight size={15} /></Link>
+            <p className="text-sm leading-6 text-[#5b5c62]">
+              Inaugural issue with {articles.length} peer-reviewed research articles across Resistance & Body Politics, Advaitic Philosophy, Microfinance & Women SHGs, Environmental Governance, and Digital Inclusion.
+            </p>
+            <Link href="/current-issue" className="rule-link mt-6 font-bold text-[#a45a40]">
+              Explore {articles.length} Published Articles <ArrowRight size={15} />
+            </Link>
           </div>
-          <p className="mt-4 text-right text-[.65rem] uppercase tracking-[.14em] text-[#868077]">Research · Reflection · Public purpose</p>
+          <p className="mt-4 text-right text-[.65rem] uppercase tracking-[.14em] text-[#868077]">
+            Research · Reflection · Public purpose
+          </p>
         </aside>
       </section>
 
+      {/* Glance Bar */}
       <section className="bg-[#24395a] text-[#f6f3eb]" aria-label="Journal at a glance">
         <div className="page-wrap grid gap-5 py-7 sm:grid-cols-2 md:grid-cols-4 md:gap-0">
           {[
-            { icon: CalendarDays, title: "Four issues", text: "Planned annually" },
-            { icon: Globe2, title: "Open access", text: "Online publication intent" },
-            { icon: BookOpenText, title: "English", text: "Primary publication language" },
-            { icon: Scale, title: "Peer reviewed", text: "Editorial screening and review" },
+            { icon: CalendarDays, title: "Four issues", text: settings?.frequency || "Planned annually" },
+            { icon: Globe2, title: "Open access", text: settings?.accessModel || "Online publication intent" },
+            { icon: BookOpenText, title: "English", text: settings?.primaryLanguage || "Primary publication language" },
+            { icon: Scale, title: "Peer reviewed", text: settings?.peerReviewType || "Double-blind review" },
           ].map(({ icon: Icon, title, text }, index) => (
-            <div key={title} className={`flex items-center gap-4 py-2 md:px-5 ${index ? "md:border-l md:border-white/20" : ""}`}>
+            <div
+              key={title}
+              className={`flex items-center gap-4 py-2 md:px-5 ${index ? "md:border-l md:border-white/20" : ""}`}
+            >
               <Icon className="h-5 w-5 shrink-0 text-[#d99b7e]" strokeWidth={1.6} />
-              <div><p className="font-editorial text-lg">{title}</p><p className="text-xs text-[#d6d7da]">{text}</p></div>
+              <div>
+                <p className="font-editorial text-lg">{title}</p>
+                <p className="text-xs text-[#d6d7da]">{text}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -93,10 +166,10 @@ export default function Home() {
                 <p className="eyebrow text-emerald-800 font-bold">Latest Publication · Inaugural Issue</p>
               </div>
               <h2 className="font-editorial text-3xl font-semibold text-[#213858] sm:text-4xl">
-                Volume 1, Issue 1 (January–March 2027)
+                {volume}, {issue} ({period})
               </h2>
               <p className="mt-2 text-sm text-[#5f6368] max-w-2xl">
-                Five peer-reviewed original research articles published serial-wise under open-access with full-text PDFs.
+                {articles.length} peer-reviewed original research articles published serial-wise under open-access with full-text PDFs.
               </p>
             </div>
             <Link
@@ -108,7 +181,7 @@ export default function Home() {
           </div>
 
           <div className="space-y-4">
-            {currentIssueArticles.map((art) => (
+            {articles.map((art) => (
               <div
                 key={art.id}
                 className="group relative border border-[#d8cfc0] bg-[#f8f5ee] hover:bg-white p-5 sm:p-6 transition-all shadow-xs hover:shadow-sm rounded-sm"
@@ -118,35 +191,49 @@ export default function Home() {
                     <span className="inline-flex items-center justify-center bg-[#213858] text-[#f6f3eb] font-mono font-bold text-xs px-2.5 py-0.5 rounded-xs">
                       ARTICLE {art.serialNumber}
                     </span>
-                    <span className="text-xs uppercase tracking-wider font-semibold text-[#a45a40]">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#a45a40]">
                       {art.section}
                     </span>
                   </div>
-                  <div className="text-xs font-mono text-[#77736d]">
-                    Pages {art.pages} · {art.volume}, {art.issue} ({art.year})
+                  <div className="flex items-center gap-3 text-xs text-[#77736d] font-mono">
+                    <span>{art.volume}, {art.issue}</span>
+                    <span>·</span>
+                    <span>pp. {art.pages}</span>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
-                  <div>
-                    <h3 className="font-editorial text-xl sm:text-2xl font-semibold text-[#213858] leading-snug group-hover:text-[#a45a40] transition-colors">
-                      <Link href={`/article/${art.slug}`}>
-                        {art.title}
-                      </Link>
-                    </h3>
-                    <p className="mt-2 text-sm font-medium text-[#3e424c]">
-                      {art.authors.map((a) => `${a.name}${a.isCorresponding ? " *" : ""}`).join(", ")}
-                      <span className="text-xs font-normal text-[#6f727a] ml-2">
-                        — {art.authors[0].institution}
-                      </span>
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/article/${art.slug}`}
+                      className="font-editorial text-xl sm:text-2xl font-bold leading-snug text-[#213858] group-hover:text-[#a45a40] transition-colors block no-underline"
+                    >
+                      {art.title}
+                    </Link>
+
+                    <div className="mt-2.5 text-xs text-[#52555e]">
+                      <span className="font-semibold text-[#213858]">Authors: </span>
+                      {art.authors.map((author, aIdx) => (
+                        <span key={author.name}>
+                          <span className="font-medium text-[#2f3e58]">{author.name}</span>
+                          {author.role && <span className="text-[#77736d]"> ({author.role})</span>}
+                          {author.institution && (
+                            <span className="text-[#62616a]"> — {author.institution}</span>
+                          )}
+                          {aIdx < art.authors.length - 1 && <span className="text-[#888] mx-1.5">|</span>}
+                        </span>
+                      ))}
+                    </div>
+
+                    <p className="mt-3 text-xs leading-5 text-[#5e616b] line-clamp-2 font-serif">
+                      {art.abstract}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 pt-1 md:pt-0">
+                  <div className="flex flex-wrap md:flex-col gap-2 shrink-0 self-start">
                     <Link
                       href={`/article/${art.slug}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#213858] bg-[#ebe6db] hover:bg-[#213858] hover:text-[#f6f3eb] rounded-xs border border-[#cfc6b5] transition-colors"
-                      title="View Article Details"
+                      className="btn-secondary inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold"
                     >
                       <span>Article</span>
                       <ArrowRight size={12} />
@@ -183,18 +270,56 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Journal Overview Section */}
       <section id="journal-overview" className="page-wrap grid gap-10 py-16 sm:py-24 md:grid-cols-[.8fr_1.2fr]">
         <div>
           <p className="eyebrow">About the journal</p>
-          <h2 className="font-editorial mt-4 max-w-sm text-4xl leading-tight tracking-[-.03em] text-[#263c5d] sm:text-5xl">Scholarship that meets the moment.</h2>
+          <h2 className="font-editorial mt-4 max-w-sm text-4xl leading-tight tracking-[-.03em] text-[#263c5d] sm:text-5xl">
+            Scholarship that meets the moment.
+          </h2>
         </div>
         <div className="max-w-2xl">
-          <p className="font-editorial text-xl leading-8 text-[#454957] sm:text-2xl sm:leading-9">JPSG is a peer-reviewed academic journal published by the Democratic Organisation for Civic Knowledge Foundation.</p>
-          <p className="mt-5 leading-7 text-[#62616a]">We provide a platform for original research, theoretical contributions, empirical studies, policy analysis and scholarly discussion on contemporary political, social and governance issues. The journal welcomes research that deepens understanding across disciplines and connects rigorous inquiry with questions of public life.</p>
-          <Link href="/about" className="rule-link mt-6">Learn about our scope <ArrowRight size={15} /></Link>
+          <p className="font-editorial text-xl leading-8 text-[#454957] sm:text-2xl sm:leading-9">
+            {journalTitle} is a peer-reviewed academic journal published by the{" "}
+            <a
+              href="https://docknowledge.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold underline text-[#1f314d] hover:text-[#a45a40] inline-flex items-center gap-1"
+            >
+              Democratic Organisation for Civic Knowledge Foundation <ExternalLink size={14} className="text-[#a45a40]" />
+            </a>{" "}
+            (
+            <a
+              href="https://docknowledge.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#a45a40] hover:underline font-semibold"
+            >
+              docknowledge.org
+            </a>
+            ).
+          </p>
+          <p className="mt-5 leading-7 text-[#62616a]">
+            We provide a platform for original research, theoretical contributions, empirical studies, policy analysis and scholarly discussion on contemporary political, social and governance issues. The journal welcomes research that deepens understanding across disciplines and connects rigorous inquiry with questions of public life.
+          </p>
+          <div className="mt-6 flex items-center gap-4">
+            <Link href="/about" className="rule-link">
+              Learn about our scope <ArrowRight size={15} />
+            </Link>
+            <a
+              href="https://docknowledge.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rule-link text-[#a45a40]"
+            >
+              Visit DOCK Foundation website <ExternalLink size={13} />
+            </a>
+          </div>
         </div>
       </section>
 
+      {/* Areas of Interest */}
       <section className="border-y border-[#d9d2c6] bg-[#f0ede6] py-14 sm:py-20">
         <div className="page-wrap">
           <div className="mb-9 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -205,7 +330,7 @@ export default function Home() {
             <Link href="/about" className="rule-link">Full journal scope <ArrowRight size={15} /></Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {subjectAreas.map((area, idx) => (
+            {activeAreas.map((area, idx) => (
               <div
                 key={area}
                 className="flex items-center gap-3 border border-[#d5ccbd] bg-[#f7f5ef] px-4 py-3 rounded-sm shadow-xs hover:border-[#a45a40] transition-colors"
@@ -222,16 +347,25 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Contribute Section */}
       <section className="page-wrap grid gap-8 py-16 sm:py-24 md:grid-cols-[1fr_1fr]">
         <div className="border border-[#d6cfc2] bg-[#f0ede6] p-7 sm:p-9">
           <div className="h-px w-12 bg-[#a45a40]" aria-hidden="true" />
-          <p className="font-editorial mt-5 text-[1.65rem] leading-[1.35] text-[#263c5d] sm:text-[2rem]">Scholarship with a public purpose.</p>
-          <p className="mt-5 text-xs uppercase tracking-[.12em] text-[#77736d]">The purpose of JPSG</p>
+          <p className="font-editorial mt-5 text-[1.65rem] leading-[1.35] text-[#263c5d] sm:text-[2rem]">
+            Scholarship with a public purpose.
+          </p>
+          <p className="mt-5 text-xs uppercase tracking-[.12em] text-[#77736d]">
+            The purpose of {settings?.journalAbbr || "JPSG"}
+          </p>
         </div>
         <div className="flex flex-col justify-center py-2 md:pl-8">
           <p className="eyebrow">Contribute</p>
-          <h2 className="font-editorial mt-3 text-3xl leading-tight text-[#263c5d] sm:text-4xl">Bring your research into the conversation.</h2>
-          <p className="mt-4 max-w-lg leading-7 text-[#62616a]">Authors are invited to prepare original work within the journal’s scope. Review the manuscript categories, word limits, ethics guidance and double-blind review process before submission.</p>
+          <h2 className="font-editorial mt-3 text-3xl leading-tight text-[#263c5d] sm:text-4xl">
+            Bring your research into the conversation.
+          </h2>
+          <p className="mt-4 max-w-lg leading-7 text-[#62616a]">
+            Authors are invited to prepare original work within the journal’s scope. Review the manuscript categories, word limits, ethics guidance and double-blind review process before submission.
+          </p>
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3">
             <Link href="/author-guidelines" className="rule-link">Author guidelines <ArrowRight size={15} /></Link>
             <Link href="/peer-review" className="rule-link">Review process <ArrowRight size={15} /></Link>
@@ -261,37 +395,59 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Editorial Leadership Preview */}
       <section className="bg-[#e8e4db]">
         <div className="page-wrap grid gap-8 py-10 sm:py-14 md:grid-cols-[1fr_1fr] md:items-center">
           <div>
             <p className="eyebrow">Editorial leadership</p>
             <h2 className="font-editorial mt-3 text-3xl text-[#263c5d]">Built for careful scholarship.</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-[#62616a]">The editorial team supports rigorous, constructive assessment and clear publication standards. Meet our Editor-in-Chief, Managing Editor, and Editorial Board members.</p>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[#62616a]">
+              The editorial team supports rigorous, constructive assessment and clear publication standards. Meet our Editor-in-Chief, Managing Editor, and Editorial Board members.
+            </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
-            {[
-              {
-                role: "Editor-in-Chief / Co-Founder",
-                name: "Dr. Priyanka Gangarapu",
-                designation: "Faculty, Department of Political Science and Public Administration",
-                institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
-              },
-              {
-                role: "Managing Editor / Founder",
-                name: "Raghu Raja Isampalli",
-                designation: "MA Political Science",
-                institution: "Democratic Organisation for Civic Knowledge Foundation, Hyderabad, Telangana, India",
-              },
-            ].map((person) => (
+            {(leadership && leadership.length > 0
+              ? leadership.slice(0, 2)
+              : [
+                  {
+                    role: "Editor-in-Chief / Co-Founder",
+                    name: "Dr. Priyanka Gangarapu",
+                    designation: "Faculty, Department of Political Science and Public Administration",
+                    institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
+                  },
+                  {
+                    role: "Managing Editor / Founder",
+                    name: "Raghu Raja Isampalli",
+                    designation: "MA Political Science",
+                    institution: "Democratic Organisation for Civic Knowledge Foundation, Hyderabad, Telangana, India",
+                  },
+                ]
+            ).map((person) => (
               <div key={person.role} className="border-t border-[#bdb4a7] pt-4">
                 <p className="eyebrow text-[#a45a40]">{person.role}</p>
                 <p className="font-editorial mt-1 text-xl font-bold text-[#263c5d]">{person.name}</p>
                 <p className="mt-1 text-xs font-semibold text-[#454952] leading-5">{person.designation}</p>
-                <p className="mt-0.5 text-xs text-[#77736d] leading-4">{person.institution}</p>
+                <p className="mt-0.5 text-xs text-[#77736d] leading-4">
+                  {person.institution?.includes("Democratic Organisation") ? (
+                    <a
+                      href="https://docknowledge.org"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline text-[#2f3e58] font-semibold inline-flex items-center gap-1"
+                    >
+                      <span>{person.institution}</span>
+                      <ExternalLink size={11} className="text-[#a45a40]" />
+                    </a>
+                  ) : (
+                    person.institution
+                  )}
+                </p>
               </div>
             ))}
           </div>
-          <Link href="/editorial-board" className="rule-link md:col-start-2">Meet the editorial board <ArrowRight size={15} /></Link>
+          <Link href="/editorial-board" className="rule-link md:col-start-2">
+            Meet the editorial board <ArrowRight size={15} />
+          </Link>
         </div>
       </section>
     </div>

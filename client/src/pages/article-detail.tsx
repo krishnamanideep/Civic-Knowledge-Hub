@@ -21,11 +21,15 @@ import {
   getCitation,
   type JournalArticle,
 } from "@/data/articles";
+import { useArticle, useArticles, useJournalSettings } from "@/hooks/use-journal";
 
 export default function ArticleDetailPage({ slug: propSlug }: { slug?: string }) {
   const params = useParams<{ slug: string }>();
   const slug = propSlug || params?.slug || "";
-  const article = getArticleBySlug(slug);
+  const { article: dynamicArticle } = useArticle(slug);
+  const { articles: allArticles } = useArticles();
+  const { settings } = useJournalSettings();
+  const article = dynamicArticle || getArticleBySlug(slug, allArticles);
 
   const [citeFormat, setCiteFormat] = useState<"APA" | "MLA" | "Chicago" | "BibTeX">("APA");
   const [copied, setCopied] = useState(false);
@@ -64,7 +68,7 @@ export default function ArticleDetailPage({ slug: propSlug }: { slug?: string })
 
     // Standard meta
     addMeta("description", article.abstract.slice(0, 200) + "...");
-    addMeta("keywords", article.keywords.join(", "));
+    addMeta("keywords", (article.keywords || []).join(", "));
 
     // Google Scholar Highwire Press tags
     addMeta("citation_title", article.title);
@@ -136,7 +140,7 @@ export default function ArticleDetailPage({ slug: propSlug }: { slug?: string })
     setTimeout(() => setUrlCopied(false), 2000);
   };
 
-  const otherArticles = currentIssueArticles.filter((a) => a.id !== article.id);
+  const otherArticles = allArticles.filter((a) => a.id !== article.id);
 
   return (
     <div className="enter">
@@ -304,7 +308,16 @@ export default function ArticleDetailPage({ slug: propSlug }: { slug?: string })
                   <div className="pt-2 border-t border-[#dfd7c9]">
                     <dt className="text-[0.68rem] uppercase font-bold text-[#77736d]">Publisher</dt>
                     <dd className="text-[#555861] mt-0.5 leading-snug">
-                      Democratic Organisation for Civic Knowledge Foundation
+                      <a
+                        href="https://docknowledge.org"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline text-[#1f314d] font-semibold inline-flex items-center gap-1"
+                        title="Visit Democratic Organisation for Civic Knowledge Foundation website"
+                      >
+                        <span>Democratic Organisation for Civic Knowledge Foundation</span>
+                        <ExternalLink size={10} className="text-[#a45a40]" />
+                      </a>
                     </dd>
                   </div>
                 </dl>

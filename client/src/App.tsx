@@ -6,7 +6,22 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import JournalPage from "@/pages/journal-pages";
 import ArticleDetailPage from "@/pages/article-detail";
+import AdminPage from "@/pages/admin";
 import { JournalLayout } from "@/components/journal-layout";
+
+function DockRedirect() {
+  if (typeof window !== "undefined") {
+    window.location.href = "https://docknowledge.org";
+  }
+  return (
+    <div className="p-12 text-center">
+      <p className="font-editorial text-xl text-[#1f314d]">Redirecting to DOCK Foundation (docknowledge.org)...</p>
+      <a href="https://docknowledge.org" className="text-[#a45a40] underline mt-3 inline-block">
+        Click here if not redirected automatically
+      </a>
+    </div>
+  );
+}
 
 function Router() {
   return (
@@ -24,6 +39,10 @@ function Router() {
         <Route path="/publication-ethics"><JournalPage page="publication-ethics" /></Route>
         <Route path="/faq"><JournalPage page="faq" /></Route>
         <Route path="/contact"><JournalPage page="contact" /></Route>
+        <Route path="/admin" component={AdminPage} />
+        <Route path="/admin/:sub*" component={AdminPage} />
+        <Route path="/dock" component={DockRedirect} />
+        <Route path="/docknowledge" component={DockRedirect} />
         <Route path="/article/:slug"><ArticleDetailPage /></Route>
         <Route path="/articles/:slug"><ArticleDetailPage /></Route>
         <Route><JournalPage page="not-found" /></Route>

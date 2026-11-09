@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowUpRight, Menu, X, Globe, BookOpen, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Menu, X, Globe, Lock, ShieldCheck } from "lucide-react";
+import { useJournalSettings } from "@/hooks/use-journal";
 
 export const navigation = [
   { label: "Home", href: "/" },
@@ -15,21 +16,31 @@ export const navigation = [
   { label: "Publication ethics", href: "/publication-ethics" },
   { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },
+  { label: "Admin panel", href: "/admin" },
 ];
 
 function NavLink({ href, label, onNavigate }: { href: string; label: string; onNavigate?: () => void }) {
   const [location] = useLocation();
-  const active = href === "/" ? location === "/" : location === href;
+  const active = href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
+  const isAdmin = href === "/admin";
+
   return (
     <Link
       href={href}
       onClick={onNavigate}
-      className={`nav-link text-xs font-semibold transition-colors py-2 px-3 rounded hover:bg-[#e4decb] ${
-        active ? "text-[#1d3254] font-bold bg-[#e8e2d2] border-b-2 border-[#a45a40]" : "text-[#47484e]"
+      className={`nav-link text-xs font-semibold transition-colors py-2 px-3 rounded flex items-center gap-1 ${
+        isAdmin
+          ? active
+            ? "text-white font-bold bg-[#1f314d] border-b-2 border-[#a45a40]"
+            : "text-[#1f314d] bg-[#eae4d5] hover:bg-[#ded7c5] font-bold"
+          : active
+          ? "text-[#1d3254] font-bold bg-[#e8e2d2] border-b-2 border-[#a45a40]"
+          : "text-[#47484e] hover:bg-[#e4decb]"
       }`}
       aria-current={active ? "page" : undefined}
     >
-      {label}
+      {isAdmin && <Lock size={11} className="text-[#a45a40]" />}
+      <span>{label}</span>
     </Link>
   );
 }
@@ -37,6 +48,12 @@ function NavLink({ href, label, onNavigate }: { href: string; label: string; onN
 export function JournalLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMenu = () => setMobileOpen(false);
+  const { settings } = useJournalSettings();
+
+  const journalTitle = settings?.journalTitle || "Journal of Politics, Society and Governance";
+  const currentVolume = settings?.currentVolume || "Volume 1";
+  const currentIssue = settings?.currentIssue || "Issue 1";
+  const currentYear = settings?.currentYear || "2027";
 
   return (
     <div className="min-h-[100dvh] flex flex-col paper-texture font-sans text-[#2c3038]">
@@ -46,24 +63,43 @@ export function JournalLayout({ children }: { children: ReactNode }) {
             <Link href="/" className="flex items-center gap-2.5 sm:gap-4 no-underline group shrink min-w-0" aria-label="Journal Homepage">
               <img
                 src="/logo.png"
-                alt="Journal of Politics, Society and Governance Logo"
+                alt={`${journalTitle} Logo`}
                 className="h-11 sm:h-16 w-auto object-contain shrink-0 transition-transform group-hover:scale-[1.02]"
               />
               <div className="border-l border-[#d3cbba] pl-2.5 sm:pl-4 min-w-0">
                 <span className="block font-editorial text-[clamp(1.05rem,2.2vw,2.1rem)] leading-[1.12] font-bold tracking-tight text-[#1e3456]">
-                  Journal of Politics, Society and Governance
+                  {journalTitle}
                 </span>
-                <span className="mt-1 hidden sm:block text-[0.63rem] font-bold tracking-[0.14em] text-[#77736d] uppercase">
-                  Published by Democratic Organisation for Civic Knowledge Foundation
-                </span>
+                <a
+                  href="https://docknowledge.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 hidden sm:inline-flex items-center gap-1 text-[0.63rem] font-bold tracking-[0.14em] text-[#77736d] uppercase hover:text-[#a45a40] transition-colors"
+                  title="Visit Democratic Organisation for Civic Knowledge Foundation website (docknowledge.org)"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span>Published by Democratic Organisation for Civic Knowledge Foundation</span>
+                  <ArrowUpRight size={10} className="shrink-0 text-[#a45a40]" />
+                </a>
               </div>
             </Link>
 
             <div className="hidden items-center gap-3 md:flex shrink-0">
               <div className="text-right text-xs text-[#6e6a62]">
-                <div className="font-semibold text-[#1f314d]">Volume 1 · Issue 1</div>
-                <div className="text-[#3d7a42] font-semibold">Current Issue · 2027</div>
+                <div className="font-semibold text-[#1f314d]">{currentVolume} · {currentIssue}</div>
+                <div className="text-[#3d7a42] font-semibold">Current Issue · {currentYear}</div>
               </div>
+              <a
+                href="https://docknowledge.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded bg-[#e8e2d2] hover:bg-[#ded7c5] text-[#1e3456] border border-[#d3cbba] transition-colors shadow-xs"
+                title="Visit DOCK Foundation website (docknowledge.org)"
+              >
+                <Globe size={13} className="text-[#a45a40]" />
+                <span>docknowledge.org</span>
+                <ArrowUpRight size={12} />
+              </a>
               <Link
                 href="/submissions"
                 className="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold shadow-sm"
@@ -96,10 +132,20 @@ export function JournalLayout({ children }: { children: ReactNode }) {
               {navigation.map((item) => (
                 <NavLink key={item.href} {...item} onNavigate={closeMenu} />
               ))}
+              <a
+                href="https://docknowledge.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="col-span-2 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[#1e3456] bg-[#e4decb] rounded border border-[#d3cbba] mt-1"
+              >
+                <Globe size={13} className="text-[#a45a40]" />
+                <span>Visit DOCK Foundation (docknowledge.org)</span>
+                <ArrowUpRight size={12} />
+              </a>
               <Link
                 href="/submissions"
                 onClick={closeMenu}
-                className="btn-primary col-span-2 mt-3 px-4 py-3 text-center text-sm font-bold shadow"
+                className="btn-primary col-span-2 mt-2 px-4 py-3 text-center text-sm font-bold shadow"
               >
                 Submission Information
               </Link>
@@ -119,15 +165,35 @@ export function JournalLayout({ children }: { children: ReactNode }) {
               <div className="flex items-center gap-3">
                 <img
                   src="/logo.png"
-                  alt="Journal of Politics, Society and Governance"
+                  alt={journalTitle}
                   className="h-14 w-auto object-contain"
                 />
               </div>
               <p className="mt-4 max-w-sm text-sm leading-6 text-[#5b5a54]">
-                The <strong>Journal of Politics, Society and Governance</strong> is a peer-reviewed academic journal dedicated to publishing rigorous interdisciplinary scholarship on political institutions, public policy, governance, and social transformations.
+                The <strong>{journalTitle}</strong> is a peer-reviewed academic journal dedicated to publishing rigorous interdisciplinary scholarship on political institutions, public policy, governance, and social transformations.
               </p>
               <p className="mt-3 text-xs leading-5 text-[#77736d]">
-                Published by the <strong>Democratic Organisation for Civic Knowledge Foundation</strong>.
+                Published by the{" "}
+                <a
+                  href="https://docknowledge.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-[#1f314d] hover:text-[#a45a40] underline inline-flex items-center gap-1"
+                  title="Visit Democratic Organisation for Civic Knowledge Foundation website"
+                >
+                  Democratic Organisation for Civic Knowledge Foundation
+                  <ArrowUpRight size={11} className="text-[#a45a40]" />
+                </a>{" "}
+                (
+                <a
+                  href="https://docknowledge.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#a45a40] hover:underline font-semibold"
+                >
+                  docknowledge.org
+                </a>
+                ).
               </p>
             </div>
 
@@ -138,9 +204,10 @@ export function JournalLayout({ children }: { children: ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="text-xs text-[#4b4d54] no-underline hover:text-[#a45a40] transition-colors"
+                    className="text-xs text-[#4b4d54] no-underline hover:text-[#a45a40] transition-colors flex items-center gap-1"
                   >
-                    {item.label}
+                    <span>{item.label}</span>
+                    {item.href === "/admin" && <Lock size={10} className="text-[#a45a40]" />}
                   </Link>
                 ))}
               </div>
@@ -162,25 +229,89 @@ export function JournalLayout({ children }: { children: ReactNode }) {
               <div className="space-y-3 text-xs leading-5 text-[#4b4d54]">
                 <div>
                   <p className="font-bold text-[#1f314d]">Publisher's Office:</p>
-                  <p>Democratic Organisation for Civic Knowledge Foundation</p>
-                  <p>Hyderabad, Telangana, India</p>
+                  <p>
+                    <a
+                      href="https://docknowledge.org"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#1f314d] hover:text-[#a45a40] hover:underline font-semibold inline-flex items-center gap-1"
+                    >
+                      Democratic Organisation for Civic Knowledge Foundation
+                      <ArrowUpRight size={10} className="text-[#a45a40]" />
+                    </a>
+                  </p>
+                  <p>{settings?.publisherLocation || "Hyderabad, Telangana, India"}</p>
+                  <p className="mt-0.5">
+                    <a
+                      href="https://docknowledge.org"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs text-[#a45a40] hover:underline font-bold inline-flex items-center gap-1"
+                    >
+                      <span>https://docknowledge.org</span>
+                      <ArrowUpRight size={11} />
+                    </a>
+                  </p>
                 </div>
                 <div>
                   <p className="font-bold text-[#1f314d]">Editorial & Publication Office:</p>
-                  <p>#9-164/3, Gandhi Nagar,</p>
-                  <p>Madhurawada, Visakhapatnam,</p>
-                  <p>Andhra Pradesh, India - 530048</p>
+                  <p className="whitespace-pre-line">{settings?.editorialOffice || "#9-164/3, Gandhi Nagar,\nMadhurawada, Visakhapatnam,\nAndhra Pradesh, India - 530048"}</p>
                 </div>
               </div>
               <div className="mt-3 space-y-1 text-xs text-[#6e6a62]">
-                <p>Contact: <a href="mailto:contactus.jpsg@docknowledge.org" className="font-mono font-semibold text-[#1f314d] hover:underline">contactus.jpsg@docknowledge.org</a></p>
+                <p>
+                  Contact:{" "}
+                  <a
+                    href={`mailto:${settings?.contactEmail || "contactus.jpsg@docknowledge.org"}`}
+                    className="font-mono font-semibold text-[#1f314d] hover:underline"
+                  >
+                    {settings?.contactEmail || "contactus.jpsg@docknowledge.org"}
+                  </a>
+                </p>
+                <p>
+                  Submissions:{" "}
+                  <a
+                    href={`mailto:${settings?.submissionEmail || "jpsg@docknowledge.org"}`}
+                    className="font-mono font-semibold text-[#1f314d] hover:underline"
+                  >
+                    {settings?.submissionEmail || "jpsg@docknowledge.org"}
+                  </a>
+                </p>
               </div>
             </div>
           </div>
 
           <div className="mt-10 flex flex-col gap-3 border-t border-[#d0c9bd] pt-5 text-xs text-[#77736d] sm:flex-row sm:items-center sm:justify-between">
-            <span>© {new Date().getFullYear()} Democratic Organisation for Civic Knowledge Foundation. All rights reserved.</span>
-            <span>Journal of Politics, Society and Governance (JPSG) · Published by Democratic Organisation for Civic Knowledge Foundation, India</span>
+            <span>
+              © {new Date().getFullYear()}{" "}
+              <a
+                href="https://docknowledge.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline font-semibold text-[#1f314d]"
+              >
+                Democratic Organisation for Civic Knowledge Foundation
+              </a>
+              . All rights reserved.
+            </span>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#ded7c7] hover:bg-[#d0c7b3] text-[#1f314d] font-bold text-xs transition-colors"
+              >
+                <Lock size={11} className="text-[#a45a40]" />
+                <span>Editorial Admin Panel</span>
+              </Link>
+              <a
+                href="https://docknowledge.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline text-[#a45a40] font-semibold inline-flex items-center gap-0.5"
+              >
+                <span>docknowledge.org</span>
+                <ArrowUpRight size={11} />
+              </a>
+            </div>
           </div>
         </div>
       </footer>

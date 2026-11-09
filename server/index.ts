@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -74,6 +75,11 @@ app.use((req, res, next) => {
 
     return res.status(status).json({ message });
   });
+
+  // Static file serving for uploaded journal articles and author downloads
+  const clientPublicDir = path.resolve(process.cwd(), "client", "public");
+  app.use("/articles", express.static(path.join(clientPublicDir, "articles")));
+  app.use("/downloads", express.static(path.join(clientPublicDir, "downloads")));
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

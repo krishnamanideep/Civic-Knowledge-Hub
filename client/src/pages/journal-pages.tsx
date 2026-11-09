@@ -3,9 +3,10 @@ import { Link } from "wouter";
 import { ArrowRight, CalendarDays, Check, FileText, Mail, MapPin, Phone, Printer, ChevronDown, ChevronUp, BookOpen, ShieldCheck, HelpCircle, Download, FileDown, ExternalLink } from "lucide-react";
 import { ContentFrame, NoteBox, PageIntro, SideCard } from "@/components/journal-layout";
 import { ManuscriptTemplatesSection } from "@/components/manuscript-templates";
-import { currentIssueArticles } from "@/data/articles";
+import { currentIssueArticles as staticArticles } from "@/data/articles";
 import { ArticleCard } from "@/components/article-card";
 import { subjectAreas } from "./home";
+import { useArticles, usePeople, useJournalSettings } from "@/hooks/use-journal";
 
 export type JournalPageType =
   | "about"
@@ -104,13 +105,25 @@ function Sidebar({ label = "Essential Pages" }: { label?: string }) {
       </div>
 
       <p className="mt-4 text-xs leading-5 text-[#77736d]">
-        Published by the Democratic Organisation for Civic Knowledge Foundation, Visakhapatnam, Andhra Pradesh, India.
+        Published by the{" "}
+        <a
+          href="https://docknowledge.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline font-semibold text-[#1f314d]"
+        >
+          Democratic Organisation for Civic Knowledge Foundation
+        </a>
+        , Visakhapatnam, Andhra Pradesh, India.
       </p>
     </SideCard>
   );
 }
 
 function AboutPage() {
+  const { settings } = useJournalSettings();
+  const journalTitle = settings?.journalTitle || "Journal of Politics, Society and Governance";
+
   return (
     <>
       <PageIntro {...pageMetadata.about} />
@@ -120,30 +133,57 @@ function AboutPage() {
             <dl className="space-y-4 text-sm">
               <div>
                 <dt className="text-xs uppercase tracking-wide text-[#77736d]">Journal Title</dt>
-                <dd className="mt-1 font-semibold text-[#1f314d]">Journal of Politics, Society and Governance</dd>
+                <dd className="mt-1 font-semibold text-[#1f314d]">{journalTitle}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-[#77736d]">Publisher</dt>
-                <dd className="mt-1 leading-5 text-[#4b4d54]">Democratic Organisation for Civic Knowledge Foundation</dd>
+                <dd className="mt-1 leading-5 text-[#4b4d54]">
+                  <a
+                    href="https://docknowledge.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline text-[#1f314d] font-semibold"
+                  >
+                    Democratic Organisation for Civic Knowledge Foundation
+                  </a>{" "}
+                  (
+                  <a
+                    href="https://docknowledge.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#a45a40] hover:underline font-medium"
+                  >
+                    docknowledge.org
+                  </a>
+                  )
+                </dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-[#77736d]">Frequency</dt>
-                <dd className="mt-1 font-semibold text-[#1f314d]">Four Issues Annually (Quarterly)</dd>
+                <dd className="mt-1 font-semibold text-[#1f314d]">{settings?.frequency || "Four Issues Annually (Quarterly)"}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-[#77736d]">Primary Language</dt>
-                <dd className="mt-1 font-semibold text-[#1f314d]">English</dd>
+                <dd className="mt-1 font-semibold text-[#1f314d]">{settings?.primaryLanguage || "English"}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-[#77736d]">Publication Model</dt>
-                <dd className="mt-1 font-semibold text-[#1f314d]">Open Access Intent</dd>
+                <dd className="mt-1 font-semibold text-[#1f314d]">{settings?.accessModel || "Open Access Intent"}</dd>
               </div>
             </dl>
           </SideCard>
         }
       >
         <p className="!mt-0 font-editorial !text-[1.35rem] !leading-8 text-[#1f314d]">
-          The <em>Journal of Politics, Society and Governance</em> is a peer-reviewed academic journal published by the <strong>Democratic Organisation for Civic Knowledge Foundation</strong>.
+          The <em>{journalTitle}</em> is a peer-reviewed academic journal published by the{" "}
+          <a
+            href="https://docknowledge.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold underline text-[#1f314d] hover:text-[#a45a40] inline-flex items-center gap-1"
+          >
+            Democratic Organisation for Civic Knowledge Foundation <ExternalLink size={14} className="text-[#a45a40]" />
+          </a>.
         </p>
         <p>
           The journal provides a rigorous scholarly platform for original empirical research, theoretical contributions, policy analysis, and interdisciplinary discussions concerning contemporary political institutions, social transformations, and governance frameworks.
@@ -183,19 +223,50 @@ function AboutPage() {
 }
 
 function ParticularsPage() {
+  const { settings } = useJournalSettings();
+  const publisherName = settings?.publisherName || "Democratic Organisation for Civic Knowledge Foundation";
+  const publisherWebsite = settings?.publisherWebsite || "https://docknowledge.org";
+
   const particulars = [
-    { label: "Journal Title", value: "Journal of Politics, Society and Governance" },
-    { label: "Journal Abbreviation", value: "JPSG" },
-    { label: "Publisher Name", value: "Democratic Organisation for Civic Knowledge Foundation" },
-    { label: "Publisher's Office Location", value: "Hyderabad, Telangana, India" },
-    { label: "Editorial & Publication Office Address", value: "#9-164/3, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048" },
-    { label: "Publication Frequency", value: "Four Issues Annually (Quarterly)" },
-    { label: "Publication Format / Medium", value: "Online / Digital Publication" },
-    { label: "Primary Language", value: "English" },
-    { label: "Peer Review Type", value: "Double-Blind Peer Review" },
-    { label: "Access Model", value: "Open Access Intent" },
-    { label: "Official Submission Email", value: "jpsg@docknowledge.org" },
-    { label: "General Contact Email", value: "contactus.jpsg@docknowledge.org" },
+    { label: "Journal Title", value: settings?.journalTitle || "Journal of Politics, Society and Governance" },
+    { label: "Journal Abbreviation", value: settings?.journalAbbr || "JPSG" },
+    {
+      label: "Publisher Name",
+      value: (
+        <a
+          href={publisherWebsite}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#1f314d] font-bold hover:text-[#a45a40] hover:underline inline-flex items-center gap-1.5"
+        >
+          <span>{publisherName}</span>
+          <ExternalLink size={12} className="text-[#a45a40]" />
+        </a>
+      ),
+    },
+    {
+      label: "Publisher Website",
+      value: (
+        <a
+          href={publisherWebsite}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono text-[#a45a40] font-semibold hover:underline inline-flex items-center gap-1.5"
+        >
+          <span>{publisherWebsite}</span>
+          <ExternalLink size={12} />
+        </a>
+      ),
+    },
+    { label: "Publisher's Office Location", value: settings?.publisherLocation || "Hyderabad, Telangana, India" },
+    { label: "Editorial & Publication Office Address", value: settings?.editorialOffice || "#9-164/3, Gandhi Nagar, Madhurawada, Visakhapatnam, Andhra Pradesh, India - 530048" },
+    { label: "Publication Frequency", value: settings?.frequency || "Four Issues Annually (Quarterly)" },
+    { label: "Publication Format / Medium", value: settings?.format || "Online / Digital Publication" },
+    { label: "Primary Language", value: settings?.primaryLanguage || "English" },
+    { label: "Peer Review Type", value: settings?.peerReviewType || "Double-Blind Peer Review" },
+    { label: "Access Model", value: settings?.accessModel || "Open Access Intent" },
+    { label: "Official Submission Email", value: settings?.submissionEmail || "jpsg@docknowledge.org" },
+    { label: "General Contact Email", value: settings?.contactEmail || "contactus.jpsg@docknowledge.org" },
   ];
 
   return (
@@ -204,7 +275,7 @@ function ParticularsPage() {
       <ContentFrame aside={<Sidebar label="Related Information" />}>
         <h2 className="!mt-0">Official Journal Particulars</h2>
         <p>
-          In accordance with standard academic publishing guidelines, below are the structural parameters for the <em>Journal of Politics, Society and Governance</em>:
+          In accordance with standard academic publishing guidelines, below are the structural parameters for the <em>{settings?.journalTitle || "Journal of Politics, Society and Governance"}</em>:
         </p>
 
         <div className="my-6 border border-[#d6cfc2] bg-[#f7f4ec] overflow-hidden shadow-sm">
@@ -231,8 +302,11 @@ function ParticularsPage() {
 }
 
 function BoardPage() {
-  const leadership = [
+  const { leadership: dynamicLeadership, boardMembers: dynamicBoardMembers } = usePeople();
+
+  const fallbackLeadership = [
     {
+      id: "lead-1",
       role: "Editor-in-Chief / Co-Founder",
       name: "Dr. Priyanka Gangarapu",
       designation: "Faculty",
@@ -241,6 +315,7 @@ function BoardPage() {
       email: "priyagangarapu777@gmail.com",
     },
     {
+      id: "lead-2",
       role: "Managing Editor / Founder",
       name: "Raghu Raja Isampalli",
       designation: "MA Political Science",
@@ -250,9 +325,9 @@ function BoardPage() {
     },
   ];
 
-  const boardMembers = [
-    // --- Professors ---
+  const fallbackBoardMembers = [
     {
+      id: "board-1",
       name: "Dr. Peteti Premanandam",
       role: "Editorial Board Member",
       designation: "Professor",
@@ -261,6 +336,7 @@ function BoardPage() {
       email: "petetip@gmail.com",
     },
     {
+      id: "board-2",
       name: "Dr. Devarakonda Ramesh",
       role: "Editorial Board Member",
       designation: "Professor",
@@ -269,6 +345,7 @@ function BoardPage() {
       email: "dr.anthro.au@gmail.com",
     },
     {
+      id: "board-3",
       name: "Prof. Dr. Petikam Sailaja",
       role: "Editorial Board Member",
       designation: "Professor of Law & Research Supervisor",
@@ -277,8 +354,8 @@ function BoardPage() {
       email: "sailaja.petikam@gmail.com",
       orcid: "https://orcid.org/0000-0001-5238-6230",
     },
-    // --- Assistant Professors ---
     {
+      id: "board-4",
       name: "Dr. SM. Azizunisaa Begum",
       role: "Editorial Board Member",
       designation: "Assistant Professor & Research Supervisor",
@@ -290,6 +367,7 @@ function BoardPage() {
       secondaryEmail: "azizunnisaa.law@velsuniv.ac.in",
     },
     {
+      id: "board-5",
       name: "Dr. K. Satyam Narayana",
       role: "Editorial Board Member",
       designation: "Assistant Professor",
@@ -298,6 +376,7 @@ function BoardPage() {
       email: "satyaknarayana45@gmail.com",
     },
     {
+      id: "board-6",
       name: "Dr. G. Saritha",
       role: "Editorial Board Member",
       designation: "Assistant Professor",
@@ -306,6 +385,7 @@ function BoardPage() {
       email: "Sarithagallikonda@gmail.com",
     },
     {
+      id: "board-7",
       name: "Dr. Valluri Prasadarao",
       role: "Editorial Board Member",
       designation: "Assistant Professor & Principal",
@@ -313,8 +393,8 @@ function BoardPage() {
       institution: "Krishna University",
       email: "valluripr@gmail.com",
     },
-    // --- Faculty ---
     {
+      id: "board-8",
       name: "Dr. Chippada Seshagiri Rao",
       role: "Editorial Board Member",
       designation: "Faculty",
@@ -323,6 +403,7 @@ function BoardPage() {
       email: "drseshuanphropologist@gmail.com",
     },
     {
+      id: "board-9",
       name: "Dr. Drakshayani Manduva",
       role: "Editorial Board Member",
       designation: "Faculty",
@@ -331,6 +412,7 @@ function BoardPage() {
       email: "drakshayanimanduva@gmail.com",
     },
     {
+      id: "board-10",
       name: "Dr. A. Pavan Kumar",
       role: "Editorial Board Member",
       designation: "Faculty",
@@ -338,8 +420,8 @@ function BoardPage() {
       institution: "Andhra University, Visakhapatnam, Andhra Pradesh, India",
       email: "pavankumardora@gmail.com",
     },
-    // --- Research Staff / Scholars ---
     {
+      id: "board-11",
       name: "Bhumireddy Kusuma",
       role: "Editorial Board Member",
       designation: "Research Assistant",
@@ -347,6 +429,9 @@ function BoardPage() {
       email: "kusumabhumireddy0@gmail.com",
     },
   ];
+
+  const leadership = dynamicLeadership && dynamicLeadership.length > 0 ? dynamicLeadership : fallbackLeadership;
+  const boardMembers = dynamicBoardMembers && dynamicBoardMembers.length > 0 ? dynamicBoardMembers : fallbackBoardMembers;
 
   return (
     <>
@@ -379,7 +464,22 @@ function BoardPage() {
                 </div>
                 <h3 className="!mt-1 !mb-2 text-2xl font-editorial font-bold text-[#1f314d]">{leader.name}</h3>
                 <p className="text-xs font-semibold uppercase tracking-wider text-[#a45a40]">{leader.designation}</p>
-                <p className="!mt-1 !mb-0 text-sm font-medium text-[#2f3e58]">{leader.department}</p>
+                <p className="!mt-1 !mb-0 text-sm font-medium text-[#2f3e58]">
+                  {leader.department?.includes("Democratic Organisation") ? (
+                    <a
+                      href="https://docknowledge.org"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-[#a45a40] font-semibold inline-flex items-center gap-1"
+                      title="Visit DOCK Foundation website"
+                    >
+                      <span>{leader.department}</span>
+                      <ExternalLink size={12} className="text-[#a45a40]" />
+                    </a>
+                  ) : (
+                    leader.department
+                  )}
+                </p>
                 <p className="!mt-0 text-xs text-[#676660]">{leader.institution}</p>
                 <div className="mt-3 pt-2 border-t border-[#dfd7c8] flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs font-medium text-[#1f314d]">
                   {leader.email && (
@@ -483,7 +583,15 @@ function FAQPage() {
   const faqs = [
     {
       q: "What is the Journal of Politics, Society and Governance (JPSG)?",
-      a: "The Journal of Politics, Society and Governance (JPSG) is an interdisciplinary, peer-reviewed academic journal published by the Democratic Organisation for Civic Knowledge Foundation, based in Visakhapatnam, Andhra Pradesh, India. It provides a platform for research in political science, public administration, public policy, governance, sociology, and international relations.",
+      a: (
+        <span>
+          The Journal of Politics, Society and Governance (JPSG) is an interdisciplinary, peer-reviewed academic journal published by the{" "}
+          <a href="https://docknowledge.org" target="_blank" rel="noopener noreferrer" className="font-semibold underline text-[#1f314d] hover:text-[#a45a40]">
+            Democratic Organisation for Civic Knowledge Foundation (docknowledge.org)
+          </a>
+          , based in Visakhapatnam, Andhra Pradesh, India. It provides a platform for research in political science, public administration, public policy, governance, sociology, and international relations.
+        </span>
+      ),
     },
     {
       q: "What is the publication frequency of the journal?",
@@ -515,7 +623,19 @@ function FAQPage() {
     },
     {
       q: "Where is the editorial office located?",
-      a: "The editorial office of the Journal of Politics, Society and Governance is based in Visakhapatnam, Andhra Pradesh, India, operated under the Democratic Organisation for Civic Knowledge Foundation.",
+      a: (
+        <span>
+          The editorial office of the Journal of Politics, Society and Governance is based in Visakhapatnam, Andhra Pradesh, India, operated under the{" "}
+          <a href="https://docknowledge.org" target="_blank" rel="noopener noreferrer" className="font-semibold underline text-[#1f314d] hover:text-[#a45a40]">
+            Democratic Organisation for Civic Knowledge Foundation
+          </a>{" "}
+          (
+          <a href="https://docknowledge.org" target="_blank" rel="noopener noreferrer" className="text-[#a45a40] hover:underline font-mono">
+            docknowledge.org
+          </a>
+          ).
+        </span>
+      ),
     },
   ];
 
@@ -561,6 +681,15 @@ function FAQPage() {
 }
 
 function CurrentIssuePage() {
+  const { articles: currentIssueArticles } = useArticles();
+  const { settings } = useJournalSettings();
+
+  const volume = settings?.currentVolume || "Volume 1";
+  const issue = settings?.currentIssue || "Issue 1";
+  const period = settings?.currentPeriod || "January–March 2027";
+  const year = settings?.currentYear || "2027";
+  const description = settings?.issueDescription || "The inaugural issue of the Journal of Politics, Society and Governance (JPSG) brings together five original peer-reviewed research articles.";
+
   return (
     <>
       <PageIntro {...pageMetadata["current-issue"]} />
@@ -569,33 +698,38 @@ function CurrentIssuePage() {
           <div className="space-y-4">
             <SideCard title="Issue Metadata">
               <div className="flex items-center justify-between border-b border-[#d6cfc2] pb-3">
-                <span className="font-editorial text-2xl font-bold text-[#1f314d]">Vol. 1, Issue 1</span>
+                <span className="font-editorial text-2xl font-bold text-[#1f314d]">{volume}, {issue}</span>
                 <span className="rounded bg-[#e8e2d2] px-2.5 py-0.5 text-[0.68rem] font-bold uppercase tracking-wider text-[#a45a40] border border-[#d6cfc2]">
                   Published
                 </span>
               </div>
-              <p className="mt-3 text-sm text-[#454850] font-medium">January–March 2027</p>
+              <p className="mt-3 text-sm text-[#454850] font-medium">{period}</p>
               <div className="my-3 border-t border-[#dfd7c9]" />
               <dl className="space-y-2 text-xs">
                 <div className="flex justify-between text-[#62616a]">
                   <dt>Total Articles:</dt>
-                  <dd className="font-bold text-[#1f314d]">5 Articles</dd>
-                </div>
-                <div className="flex justify-between text-[#62616a]">
-                  <dt>Page Range:</dt>
-                  <dd className="font-bold text-[#1f314d]">pp. 1–31</dd>
+                  <dd className="font-bold text-[#1f314d]">{currentIssueArticles.length} Articles</dd>
                 </div>
                 <div className="flex justify-between text-[#62616a]">
                   <dt>Access Model:</dt>
-                  <dd className="font-bold text-[#1f314d]">Open Access</dd>
+                  <dd className="font-bold text-[#1f314d]">{settings?.accessModel || "Open Access"}</dd>
                 </div>
                 <div className="flex justify-between text-[#62616a]">
                   <dt>Peer Review:</dt>
-                  <dd className="font-bold text-[#1f314d]">Double-Blind</dd>
+                  <dd className="font-bold text-[#1f314d]">{settings?.peerReviewType || "Double-Blind"}</dd>
                 </div>
               </dl>
               <p className="mt-4 pt-3 border-t border-[#dfd7c9] text-xs leading-5 text-[#77736d]">
-                Published by Democratic Organisation for Civic Knowledge Foundation, Visakhapatnam, Andhra Pradesh, India.
+                Published by{" "}
+                <a
+                  href="https://docknowledge.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline font-semibold text-[#1f314d]"
+                >
+                  Democratic Organisation for Civic Knowledge Foundation
+                </a>
+                , Visakhapatnam, Andhra Pradesh, India.
               </p>
             </SideCard>
 
@@ -631,23 +765,23 @@ function CurrentIssuePage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f0ebd9] px-3 py-1 text-[0.7rem] font-bold uppercase tracking-wider text-[#a45a40] border border-[#dfd7c9]">
-                <CalendarDays size={13} /> Inaugural Issue · Volume 1, Issue 1
+                <CalendarDays size={13} /> {volume}, {issue} · {year}
               </span>
               <h2 className="!mt-2 !mb-1 font-editorial text-3xl font-bold text-[#1f314d]">
-                Volume 1, Issue 1 (2027)
+                {volume}, {issue} ({year})
               </h2>
               <p className="!m-0 text-sm text-[#62616a]">
-                January–March 2027 · 5 Peer-Reviewed Research Articles · Pages 1–31
+                {period} · {currentIssueArticles.length} Peer-Reviewed Research Articles
               </p>
             </div>
             <div className="text-right">
               <span className="inline-block bg-[#1f314d] text-white px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xs shadow-xs">
-                Open Access
+                {settings?.accessModel || "Open Access"}
               </span>
             </div>
           </div>
           <p className="mt-4 text-xs leading-6 text-[#53565e]">
-            The inaugural issue of the <em>Journal of Politics, Society and Governance (JPSG)</em> brings together five original peer-reviewed research articles examining women's everyday micro-politics and body politics in resistance movements, universal consciousness in Advaita Vedanta, rural microfinance and women's self-help groups, environmental governance and judicial regulation in India, and technology and digital inclusion for traditional artisans.
+            {description}
           </p>
         </div>
 
@@ -657,7 +791,7 @@ function CurrentIssuePage() {
             Table of Contents · Research Articles
           </h2>
           <span className="font-mono text-xs text-[#7a766e]">
-            Serial Order: Articles 01 – 05
+            Total: {currentIssueArticles.length} Articles
           </span>
         </div>
 
@@ -673,24 +807,32 @@ function CurrentIssuePage() {
 }
 
 function ArchivesPage() {
+  const { articles: currentIssueArticles } = useArticles();
+  const { settings } = useJournalSettings();
+
+  const volume = settings?.currentVolume || "Volume 1";
+  const issue = settings?.currentIssue || "Issue 1";
+  const period = settings?.currentPeriod || "January–March 2027";
+  const year = settings?.currentYear || "2027";
+
   return (
     <>
       <PageIntro {...pageMetadata.archives} />
       <ContentFrame aside={<Sidebar label="Browse Journal" />}>
         <h2 className="!mt-0">Journal Archives</h2>
         <p>
-          The <em>Journal of Politics, Society and Governance</em> publishes quarterly. Below is the permanent public archive of all published volumes and issues.
+          The <em>{settings?.journalTitle || "Journal of Politics, Society and Governance"}</em> publishes quarterly. Below is the permanent public archive of all published volumes and issues.
         </p>
 
         {/* Volume 1 Box */}
         <div className="mt-8 border border-[#d6cfc2] bg-[#f8f5ee] shadow-sm rounded-sm overflow-hidden">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#dfd7c9] bg-[#f2ece0] p-6">
             <div>
-              <p className="eyebrow text-[#a45a40]">Volume 1 (2027) · Published</p>
+              <p className="eyebrow text-[#a45a40]">{volume} ({year}) · Published</p>
               <h3 className="!mt-1 !mb-0 font-editorial text-2xl font-bold text-[#1f314d]">
-                Volume 1, Issue 1
+                {volume}, {issue}
               </h3>
-              <p className="mt-1 text-xs text-[#676660]">January–March 2027 · 5 Articles · Pages 1–31</p>
+              <p className="mt-1 text-xs text-[#676660]">{period} · {currentIssueArticles.length} Articles</p>
             </div>
             <Link
               href="/current-issue"
@@ -1004,6 +1146,13 @@ function EthicsPage() {
 }
 
 function ContactPage() {
+  const { settings } = useJournalSettings();
+  const journalTitle = settings?.journalTitle || "Journal of Politics, Society and Governance";
+  const publisherName = settings?.publisherName || "Democratic Organisation for Civic Knowledge Foundation";
+  const publisherWebsite = settings?.publisherWebsite || "https://docknowledge.org";
+  const contactEmail = settings?.contactEmail || "contactus.jpsg@docknowledge.org";
+  const officeAddress = settings?.editorialOffice || "#9-164/3, Gandhi Nagar,\nMadhurawada, Visakhapatnam,\nAndhra Pradesh, India - 530048";
+
   return (
     <>
       <PageIntro {...pageMetadata.contact} />
@@ -1011,10 +1160,30 @@ function ContactPage() {
         aside={
           <SideCard title="Publisher Details">
             <p className="font-editorial text-xl font-semibold leading-6 text-[#1f314d]">
-              Democratic Organisation for Civic Knowledge Foundation
+              <a
+                href={publisherWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline text-[#1f314d] inline-flex items-center gap-1.5"
+                title="Visit DOCK Foundation website"
+              >
+                <span>{publisherName}</span>
+                <ExternalLink size={14} className="text-[#a45a40]" />
+              </a>
+            </p>
+            <p className="mt-2 text-xs">
+              <a
+                href={publisherWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[#a45a40] hover:underline font-bold inline-flex items-center gap-1"
+              >
+                <span>{publisherWebsite}</span>
+                <ExternalLink size={11} />
+              </a>
             </p>
             <p className="mt-3 text-sm leading-6 text-[#62616a]">
-              Publisher of the Journal of Politics, Society and Governance
+              Publisher of the <strong>{journalTitle}</strong>
             </p>
           </SideCard>
         }
@@ -1022,16 +1191,14 @@ function ContactPage() {
         <h2 className="!mt-0">Editorial Office Address</h2>
         <div className="my-6 border border-[#d6cfc2] bg-[#f7f4ec] p-6 rounded-sm shadow-sm">
           <p className="!m-0 font-editorial text-xl text-[#1f314d] font-bold">
-            Journal of Politics, Society and Governance
+            {journalTitle}
           </p>
-          <p className="!mb-0 !mt-2 text-sm text-[#454952] leading-6 font-medium">
-            #9-164/3, Gandhi Nagar,<br />
-            Madhurawada, Visakhapatnam,<br />
-            Andhra Pradesh, India - 530048
+          <p className="!mb-0 !mt-2 text-sm text-[#454952] leading-6 font-medium whitespace-pre-line">
+            {officeAddress}
           </p>
           <div className="mt-4 pt-4 border-t border-[#dfd7c9] text-sm font-semibold text-[#1f314d]">
-            <a href="mailto:contactus.jpsg@docknowledge.org" className="font-mono hover:underline">
-              contactus.jpsg@docknowledge.org
+            <a href={`mailto:${contactEmail}`} className="font-mono hover:underline">
+              {contactEmail}
             </a>
           </div>
         </div>

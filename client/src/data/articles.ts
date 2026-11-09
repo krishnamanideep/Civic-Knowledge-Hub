@@ -1,28 +1,5 @@
-export interface JournalArticle {
-  id: string;
-  serialNumber: string;
-  slug: string;
-  aliases?: string[];
-  title: string;
-  authors: {
-    name: string;
-    isCorresponding?: boolean;
-    role?: string;
-    department?: string;
-    institution: string;
-    email?: string;
-  }[];
-  section: string;
-  pages: string;
-  doi?: string;
-  pdfUrl: string;
-  abstract: string;
-  keywords: string[];
-  volume: string;
-  issue: string;
-  year: string;
-  date: string;
-}
+import { type JournalArticle, type Author } from "@shared/schema";
+export type { JournalArticle, Author };
 
 export const currentIssueArticles: JournalArticle[] = [
   {
@@ -226,14 +203,27 @@ export const currentIssueArticles: JournalArticle[] = [
   },
 ];
 
-export function getArticleBySlug(slug: string): JournalArticle | undefined {
+let _dynamicArticles: JournalArticle[] = currentIssueArticles;
+
+export function setDynamicArticles(articles: JournalArticle[]) {
+  if (Array.isArray(articles) && articles.length > 0) {
+    _dynamicArticles = articles;
+  }
+}
+
+export function getDynamicArticles(): JournalArticle[] {
+  return _dynamicArticles;
+}
+
+export function getArticleBySlug(slug: string, customList?: JournalArticle[]): JournalArticle | undefined {
   if (!slug) return undefined;
   const normalized = slug.toLowerCase().trim();
-  return currentIssueArticles.find(
+  const list = customList || _dynamicArticles;
+  return list.find(
     (a) =>
       a.slug.toLowerCase() === normalized ||
-      a.id === normalized ||
-      a.serialNumber === normalized ||
+      a.id.toLowerCase() === normalized ||
+      a.serialNumber.toLowerCase() === normalized ||
       a.aliases?.some((alias) => alias.toLowerCase() === normalized),
   );
 }
