@@ -140,7 +140,7 @@ export default function AdminPage() {
         description: "You are successfully authenticated into the JPSG Admin Panel.",
       });
     } else {
-      setLoginError("Invalid password. Hint: default password is 'admin' or 'dock2027'.");
+      setLoginError("Invalid password. Please enter the authorized administrator password.");
     }
   };
 
@@ -521,10 +521,6 @@ export default function AdminPage() {
                 className="w-full px-3.5 py-2.5 bg-white border border-[#cfc7b9] rounded-sm text-sm focus:outline-none focus:border-[#1f314d]"
                 autoFocus
               />
-              <p className="text-[0.72rem] text-[#7a766e] mt-1.5">
-                Default password: <code className="bg-[#eae4d5] px-1 py-0.5 rounded">admin</code> or{" "}
-                <code className="bg-[#eae4d5] px-1 py-0.5 rounded">dock2027</code>
-              </p>
             </div>
 
             <button
@@ -532,19 +528,6 @@ export default function AdminPage() {
               className="w-full btn-primary py-2.5 text-xs font-bold shadow-sm flex items-center justify-center gap-2"
             >
               <Lock size={14} /> Sign In to Admin Panel
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setPasswordInput("admin");
-                localStorage.setItem("jpsg_admin_logged_in", "true");
-                setIsAuthenticated(true);
-                toast({ title: "Welcome!", description: "Signed in as Editorial Administrator." });
-              }}
-              className="w-full py-2 text-xs font-semibold text-[#1f314d] bg-[#eae5d7] hover:bg-[#ded7c5] rounded-sm transition-colors border border-[#d6cfc2]"
-            >
-              ⚡ One-Click Quick Admin Login
             </button>
           </form>
 
