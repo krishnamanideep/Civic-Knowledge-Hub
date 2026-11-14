@@ -97,10 +97,9 @@ function localCreateArticle(article: InsertArticle): JournalArticle {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "");
 
-  // Check if article already exists by slug, ID, serialNumber, or title
+  // Check if article already exists by slug or title (do not match solely on default serialNumber)
   const existingIdx = current.articles.findIndex(
     (a) =>
-      (article.serialNumber && a.serialNumber === article.serialNumber) ||
       (article.slug && a.slug.toLowerCase() === article.slug.toLowerCase()) ||
       a.slug.toLowerCase() === slug.toLowerCase() ||
       a.title.trim().toLowerCase() === article.title.trim().toLowerCase()
@@ -111,7 +110,8 @@ function localCreateArticle(article: InsertArticle): JournalArticle {
     return !isNaN(num) && num > max ? num : max;
   }, 0);
   const nextNum = (maxSerial + 1).toString().padStart(2, "0");
-  const serialNumber = article.serialNumber || (existingIdx !== -1 ? current.articles[existingIdx].serialNumber : nextNum);
+  const serialAlreadyTaken = article.serialNumber && current.articles.some((a) => a.serialNumber === article.serialNumber);
+  const serialNumber = existingIdx !== -1 ? current.articles[existingIdx].serialNumber : ((!article.serialNumber || serialAlreadyTaken) ? nextNum : article.serialNumber);
   const id = existingIdx !== -1 ? current.articles[existingIdx].id : serialNumber;
 
   const newArticle: JournalArticle = {
@@ -132,6 +132,7 @@ function localCreateArticle(article: InsertArticle): JournalArticle {
   }
 
   saveLocalJournalData(current);
+  setDynamicArticles(current.articles);
   return newArticle;
 }
 
@@ -365,65 +366,81 @@ export function useAdminMutations() {
     queryClient.invalidateQueries({ queryKey: ["journal-data"] });
   };
 
+  const syncCache = (updatedData: JournalData) => {
+    saveLocalJournalData(updatedData);
+    setDynamicArticles(updatedData.articles);
+    queryClient.setQueryData(["journal-data"], updatedData);
+  };
+
   const createArticle = useMutation({
     mutationFn: async (article: InsertArticle) => {
+      let created: JournalArticle;
       try {
         const res = await fetch("/api/articles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(article),
         });
-        const contentType = res.headers.get("content-type") || "";
-        if (res.ok && contentType.includes("application/json")) {
-          const created = (await res.json()) as JournalArticle;
-          // Sync to local storage with deduplication
-          const current = getLocalJournalData();
-          const existingIdx = current.articles.findIndex(
-            (a) =>
-              a.id === created.id ||
-              a.slug.toLowerCase() === created.slug.toLowerCase() ||
-              (created.serialNumber && a.serialNumber === created.serialNumber) ||
-              a.title.trim().toLowerCase() === created.title.trim().toLowerCase()
-          );
-          if (existingIdx !== -1) {
-            current.articles[existingIdx] = created;
-          } else {
-            current.articles.push(created);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          let errMsg = errData.message || `Server error (${res.status}) saving article`;
+          if (errData.errors) {
+            errMsg += ": " + Object.entries(errData.errors).map(([k, v]) => `${k}: ${v}`).join(", ");
           }
-          saveLocalJournalData(current);
-          return created;
+          throw new Error(errMsg);
         }
-      } catch {
-        // Fallback to local storage
+        created = (await res.json()) as JournalArticle;
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        created = localCreateArticle(article);
       }
-      return localCreateArticle(article);
+
+      // Synchronously update local state & query cache
+      const current = getLocalJournalData();
+      const existingIdx = current.articles.findIndex(
+        (a) => a.id === created.id || a.slug.toLowerCase() === created.slug.toLowerCase()
+      );
+      if (existingIdx !== -1) {
+        current.articles[existingIdx] = created;
+      } else {
+        current.articles.push(created);
+      }
+      syncCache(current);
+      return created;
     },
     onSuccess: invalidate,
   });
 
   const updateArticle = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<InsertArticle> }) => {
+      let updated: JournalArticle;
       try {
         const res = await fetch(`/api/articles/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updates),
         });
-        const contentType = res.headers.get("content-type") || "";
-        if (res.ok && contentType.includes("application/json")) {
-          const updated = (await res.json()) as JournalArticle;
-          const current = getLocalJournalData();
-          const idx = current.articles.findIndex((a) => a.id === id || a.slug === id);
-          if (idx !== -1) {
-            current.articles[idx] = updated;
-            saveLocalJournalData(current);
-          }
-          return updated;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Server error (${res.status}) updating article`);
         }
-      } catch {
-        // Fallback to local storage
+        updated = (await res.json()) as JournalArticle;
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        updated = localUpdateArticle(id, updates);
       }
-      return localUpdateArticle(id, updates);
+
+      const current = getLocalJournalData();
+      const idx = current.articles.findIndex((a) => a.id === id || a.slug === id);
+      if (idx !== -1) {
+        current.articles[idx] = updated;
+      }
+      syncCache(current);
+      return updated;
     },
     onSuccess: invalidate,
   });
@@ -434,76 +451,95 @@ export function useAdminMutations() {
         const res = await fetch(`/api/articles/${id}`, {
           method: "DELETE",
         });
-        if (res.ok) {
-          const current = getLocalJournalData();
-          current.articles = current.articles.filter((a) => a.id !== id && a.slug !== id);
-          saveLocalJournalData(current);
-          return true;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Server error (${res.status}) deleting article`);
         }
-      } catch {
-        // Fallback to local storage
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        localDeleteArticle(id);
       }
-      return localDeleteArticle(id);
+
+      const current = getLocalJournalData();
+      current.articles = current.articles.filter((a) => a.id !== id && a.slug !== id);
+      syncCache(current);
+      return true;
     },
     onSuccess: invalidate,
   });
 
   const createPerson = useMutation({
     mutationFn: async (person: InsertPerson) => {
+      let created: JournalPerson;
       try {
         const res = await fetch("/api/people", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(person),
         });
-        const contentType = res.headers.get("content-type") || "";
-        if (res.ok && contentType.includes("application/json")) {
-          const created = (await res.json()) as JournalPerson;
-          const current = getLocalJournalData();
-          const existingIdx = current.people.findIndex(
-            (p) =>
-              p.id === created.id ||
-              (p.category === created.category && p.name.trim().toLowerCase() === created.name.trim().toLowerCase())
-          );
-          if (existingIdx !== -1) {
-            current.people[existingIdx] = created;
-          } else {
-            current.people.push(created);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          let errMsg = errData.message || `Server error (${res.status}) saving person`;
+          if (errData.errors) {
+            errMsg += ": " + Object.entries(errData.errors).map(([k, v]) => `${k}: ${v}`).join(", ");
           }
-          saveLocalJournalData(current);
-          return created;
+          throw new Error(errMsg);
         }
-      } catch {
-        // Fallback to local storage
+        created = (await res.json()) as JournalPerson;
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        created = localCreatePerson(person);
       }
-      return localCreatePerson(person);
+
+      const current = getLocalJournalData();
+      const existingIdx = current.people.findIndex(
+        (p) =>
+          p.id === created.id ||
+          (p.category === created.category && p.name.trim().toLowerCase() === created.name.trim().toLowerCase())
+      );
+      if (existingIdx !== -1) {
+        current.people[existingIdx] = created;
+      } else {
+        current.people.push(created);
+      }
+      syncCache(current);
+      return created;
     },
     onSuccess: invalidate,
   });
 
   const updatePerson = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<InsertPerson> }) => {
+      let updated: JournalPerson;
       try {
         const res = await fetch(`/api/people/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updates),
         });
-        const contentType = res.headers.get("content-type") || "";
-        if (res.ok && contentType.includes("application/json")) {
-          const updated = (await res.json()) as JournalPerson;
-          const current = getLocalJournalData();
-          const idx = current.people.findIndex((p) => p.id === id);
-          if (idx !== -1) {
-            current.people[idx] = updated;
-            saveLocalJournalData(current);
-          }
-          return updated;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Server error (${res.status}) updating person`);
         }
-      } catch {
-        // Fallback to local storage
+        updated = (await res.json()) as JournalPerson;
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        updated = localUpdatePerson(id, updates);
       }
-      return localUpdatePerson(id, updates);
+
+      const current = getLocalJournalData();
+      const idx = current.people.findIndex((p) => p.id === id);
+      if (idx !== -1) {
+        current.people[idx] = updated;
+      }
+      syncCache(current);
+      return updated;
     },
     onSuccess: invalidate,
   });
@@ -514,84 +550,103 @@ export function useAdminMutations() {
         const res = await fetch(`/api/people/${id}`, {
           method: "DELETE",
         });
-        if (res.ok) {
-          const current = getLocalJournalData();
-          current.people = current.people.filter((p) => p.id !== id);
-          saveLocalJournalData(current);
-          return true;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Server error (${res.status}) deleting person`);
         }
-      } catch {
-        // Fallback to local storage
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        localDeletePerson(id);
       }
-      return localDeletePerson(id);
+
+      const current = getLocalJournalData();
+      current.people = current.people.filter((p) => p.id !== id);
+      syncCache(current);
+      return true;
     },
     onSuccess: invalidate,
   });
 
   const reorderPeople = useMutation({
     mutationFn: async (orderedIds: string[]) => {
+      let updated: JournalPerson[];
       try {
         const res = await fetch("/api/people/reorder", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderedIds }),
         });
-        const contentType = res.headers.get("content-type") || "";
-        if (res.ok && contentType.includes("application/json")) {
-          const updated = await res.json();
-          const current = getLocalJournalData();
-          current.people = updated;
-          saveLocalJournalData(current);
-          return updated;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Server error (${res.status}) reordering people`);
         }
-      } catch {
-        // Fallback to local storage
+        updated = await res.json();
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        updated = localReorderPeople(orderedIds);
       }
-      return localReorderPeople(orderedIds);
+
+      const current = getLocalJournalData();
+      current.people = updated;
+      syncCache(current);
+      return updated;
     },
     onSuccess: invalidate,
   });
 
   const updateSettings = useMutation({
     mutationFn: async (settings: Partial<JournalSettings>) => {
+      let updated: JournalSettings;
       try {
         const res = await fetch("/api/settings", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(settings),
         });
-        const contentType = res.headers.get("content-type") || "";
-        if (res.ok && contentType.includes("application/json")) {
-          const updated = await res.json();
-          const current = getLocalJournalData();
-          current.settings = updated;
-          saveLocalJournalData(current);
-          return updated;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Server error (${res.status}) updating settings`);
         }
-      } catch {
-        // Fallback to local storage
+        updated = await res.json();
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        updated = localUpdateSettings(settings);
       }
-      return localUpdateSettings(settings);
+
+      const current = getLocalJournalData();
+      current.settings = updated;
+      syncCache(current);
+      return updated;
     },
     onSuccess: invalidate,
   });
 
   const resetData = useMutation({
     mutationFn: async () => {
+      let reset: JournalData;
       try {
         const res = await fetch("/api/journal/reset", {
           method: "POST",
         });
-        const contentType = res.headers.get("content-type") || "";
-        if (res.ok && contentType.includes("application/json")) {
-          const reset = await res.json();
-          saveLocalJournalData(reset);
-          return reset;
+        if (!res.ok) {
+          throw new Error("Failed to reset journal data");
         }
-      } catch {
-        // Fallback to local storage
+        reset = await res.json().then((d) => d.data || d);
+      } catch (err: any) {
+        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
+          throw err;
+        }
+        reset = localResetData();
       }
-      return localResetData();
+
+      syncCache(reset);
+      return reset;
     },
     onSuccess: invalidate,
   });

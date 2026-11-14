@@ -157,6 +157,54 @@ export default function AdminPage() {
     });
   };
 
+  // PDF Preview Modal State & Safe PDF Opener
+  const [previewPdfModal, setPreviewPdfModal] = useState<{ isOpen: boolean; url: string; title: string }>({
+    isOpen: false,
+    url: "",
+    title: "",
+  });
+
+  const safeOpenPdf = (url: string, title?: string) => {
+    if (!url) {
+      toast({
+        title: "No PDF",
+        description: "No PDF document or URL is specified for this article.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If it's a data URL, convert base64 to Blob URL so the browser won't block top frame navigation
+    if (url.startsWith("data:")) {
+      try {
+        const parts = url.split(",");
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : "application/pdf";
+        const byteString = atob(parts[1]);
+        const arrayBuffer = new ArrayBuffer(byteString.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < byteString.length; i++) {
+          uint8Array[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([uint8Array], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        const win = window.open(blobUrl, "_blank");
+        if (!win) {
+          const a = document.createElement("a");
+          a.href = blobUrl;
+          a.download = `${(title || "article").replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
+          a.click();
+        }
+        return;
+      } catch (err) {
+        console.error("Failed to parse data URL:", err);
+      }
+    }
+
+    // Standard URL
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   // Upload PDF Handler
   const handleFileUpload = async (file: File) => {
     if (!file) return;
@@ -222,9 +270,9 @@ export default function AdminPage() {
       aliases: [],
       title: "",
       section: "Original Research Article",
-      pages: "",
+      pages: "1–10",
       doi: "",
-      pdfUrl: "",
+      pdfUrl: "/articles/JPSG_Manuscript_Sample.pdf",
       abstract: "",
       keywords: [],
       volume: journalData?.settings.currentVolume || "Volume 1",
@@ -254,18 +302,18 @@ export default function AdminPage() {
       slug: article.slug,
       aliases: article.aliases || [],
       title: article.title,
-      section: article.section,
-      pages: article.pages,
+      section: article.section || "Original Research Article",
+      pages: article.pages || "1–10",
       doi: article.doi || "",
-      pdfUrl: article.pdfUrl,
-      abstract: article.abstract,
+      pdfUrl: article.pdfUrl || "/articles/JPSG_Manuscript_Sample.pdf",
+      abstract: article.abstract || "",
       keywords: article.keywords || [],
-      volume: article.volume,
-      issue: article.issue,
-      year: article.year,
-      date: article.date,
+      volume: article.volume || "Volume 1",
+      issue: article.issue || "Issue 1",
+      year: article.year || "2027",
+      date: article.date || "January–March 2027",
       status: article.status || "published",
-      authors: article.authors.map((a) => ({ ...a })),
+      authors: (article.authors || []).map((a) => ({ ...a })),
     });
     setKeywordsText((article.keywords || []).join(", "));
     setEditingArticleId(article.id);
@@ -293,21 +341,39 @@ export default function AdminPage() {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "");
 
+    const authors = articleForm.authors.map((a) => ({
+      name: a.name.trim() || "Author",
+      isCorresponding: a.isCorresponding || false,
+      role: a.role || "Faculty",
+      department: a.department || "",
+      institution: a.institution || "",
+      email: a.email || "",
+    }));
+
     const payload: InsertArticle = {
       ...articleForm,
       slug,
       keywords,
-      pdfUrl: articleForm.pdfUrl || "/articles/JPSG_Manuscript_Sample.pdf",
+      authors,
+      pages: articleForm.pages.trim() || "1–10",
+      abstract: articleForm.abstract.trim() || "Abstract pending for this publication.",
+      pdfUrl: articleForm.pdfUrl.trim() || "/articles/JPSG_Manuscript_Sample.pdf",
+      section: articleForm.section.trim() || "Original Research Article",
+      volume: articleForm.volume.trim() || "Volume 1",
+      issue: articleForm.issue.trim() || "Issue 1",
+      year: articleForm.year.trim() || "2027",
+      date: articleForm.date.trim() || "January–March 2027",
+      status: articleForm.status || "published",
     };
 
     setIsSubmittingArticle(true);
     try {
       if (editingArticleId) {
         await mutations.updateArticle.mutateAsync({ id: editingArticleId, updates: payload });
-        toast({ title: "Article Updated", description: "The article changes are now live on the website!" });
+        toast({ title: "Article Updated", description: "The article changes are now live across the website!" });
       } else {
         await mutations.createArticle.mutateAsync(payload);
-        toast({ title: "Article Uploaded", description: "New journal article added to the issue and archive!" });
+        toast({ title: "Article Uploaded & Live", description: "New journal article added to the homepage, current issue, and archive!" });
       }
       setIsArticleModalOpen(false);
     } catch (err: any) {
@@ -896,16 +962,33 @@ export default function AdminPage() {
                           </td>
                           <td className="p-3.5">
                             {art.pdfUrl ? (
-                              <a
-                                href={art.pdfUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[#a45a40] hover:underline font-medium text-[0.72rem]"
-                              >
-                                <Download size={11} /> PDF Available
-                              </a>
+                              <div className="flex flex-col gap-1 items-start">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setPreviewPdfModal({
+                                      isOpen: true,
+                                      url: art.pdfUrl,
+                                      title: art.title,
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 hover:bg-red-100 text-[#a45a40] border border-red-200 rounded text-xs font-semibold shadow-2xs transition-colors"
+                                  title="View full-text PDF in interactive reader"
+                                >
+                                  <FileText size={13} className="text-red-600" />
+                                  <span>View PDF</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => safeOpenPdf(art.pdfUrl, art.title)}
+                                  className="inline-flex items-center gap-1 text-[0.68rem] text-[#6e6a62] hover:text-[#1f314d] hover:underline"
+                                  title="Open in new window or download"
+                                >
+                                  <ExternalLink size={10} /> Open New Tab
+                                </button>
+                              </div>
                             ) : (
-                              <span className="text-[#999] text-[0.72rem]">No PDF</span>
+                              <span className="text-[#999] text-[0.72rem] italic">No PDF Attached</span>
                             )}
                           </td>
                           <td className="p-3.5">
@@ -920,11 +1003,27 @@ export default function AdminPage() {
                             </span>
                           </td>
                           <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+                            {art.pdfUrl && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewPdfModal({
+                                    isOpen: true,
+                                    url: art.pdfUrl,
+                                    title: art.title,
+                                  })
+                                }
+                                className="inline-flex items-center justify-center p-1.5 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200"
+                                title="View / Read PDF"
+                              >
+                                <FileText size={14} />
+                              </button>
+                            )}
                             <Link
                               href={`/article/${art.slug}`}
                               target="_blank"
                               className="inline-flex items-center justify-center p-1.5 rounded bg-[#e8e2d2] hover:bg-[#ded7c5] text-[#1f314d]"
-                              title="View Article Page"
+                              title="View Public Article Page"
                             >
                               <Eye size={14} />
                             </Link>
@@ -1488,21 +1587,39 @@ export default function AdminPage() {
             </div>
 
             {articleForm.pdfUrl && (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-sm flex items-center justify-between text-xs text-emerald-800">
-                <div>
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-sm flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between text-xs text-emerald-800">
+                <div className="min-w-0 flex-1">
                   <span className="font-bold">Latest Uploaded PDF URL: </span>
-                  <code className="bg-white px-2 py-0.5 rounded border border-emerald-300 ml-1 font-mono">
-                    {articleForm.pdfUrl}
+                  <code className="bg-white px-2 py-0.5 rounded border border-emerald-300 ml-1 font-mono text-[0.72rem] break-all">
+                    {articleForm.pdfUrl.startsWith("data:")
+                      ? `Embedded PDF Stream (${Math.round(articleForm.pdfUrl.length / 1024)} KB)`
+                      : articleForm.pdfUrl}
                   </code>
                 </div>
-                <a
-                  href={articleForm.pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary px-3 py-1 text-[0.72rem] font-bold"
-                >
-                  Test PDF Link
-                </a>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPreviewPdfModal({
+                        isOpen: true,
+                        url: articleForm.pdfUrl,
+                        title: articleForm.title || "Uploaded Manuscript PDF",
+                      })
+                    }
+                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#a45a40] border border-red-200 rounded text-xs font-bold inline-flex items-center gap-1 shadow-2xs"
+                  >
+                    <FileText size={13} /> View PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      safeOpenPdf(articleForm.pdfUrl, articleForm.title || "Uploaded Manuscript PDF")
+                    }
+                    className="btn-primary px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1 shadow-2xs"
+                  >
+                    <ExternalLink size={12} /> Open New Tab
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1661,9 +1778,26 @@ export default function AdminPage() {
 
               {/* PDF Document Upload */}
               <div className="p-4 bg-[#eee8db] border border-[#d6cfc2] rounded-sm space-y-2">
-                <label className="block font-bold uppercase tracking-wider text-[#1f314d]">
-                  Article PDF Document *
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold uppercase tracking-wider text-[#1f314d]">
+                    Article PDF Document *
+                  </label>
+                  {articleForm.pdfUrl && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPreviewPdfModal({
+                          isOpen: true,
+                          url: articleForm.pdfUrl,
+                          title: articleForm.title || "Article Manuscript PDF",
+                        })
+                      }
+                      className="text-xs font-bold text-[#a45a40] hover:underline inline-flex items-center gap-1"
+                    >
+                      <FileText size={12} /> Preview Attached PDF
+                    </button>
+                  )}
+                </div>
                 <div className="flex flex-col sm:flex-row gap-2 items-center">
                   <input
                     type="text"
@@ -1685,6 +1819,22 @@ export default function AdminPage() {
                       }}
                     />
                   </label>
+                  {articleForm.pdfUrl && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPreviewPdfModal({
+                          isOpen: true,
+                          url: articleForm.pdfUrl,
+                          title: articleForm.title || "Article Manuscript PDF",
+                        })
+                      }
+                      className="px-3 py-2 bg-red-50 hover:bg-red-100 text-[#a45a40] border border-red-200 rounded text-xs font-bold shrink-0 inline-flex items-center gap-1 shadow-2xs"
+                      title="Test view PDF"
+                    >
+                      <Eye size={13} /> View PDF
+                    </button>
+                  )}
                 </div>
                 {uploadingPdf && (
                   <p className="text-xs text-[#a45a40] font-semibold animate-pulse">Uploading file...</p>
@@ -2040,6 +2190,80 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== INTERACTIVE PDF PREVIEW MODAL ==================== */}
+      {previewPdfModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-[#f7f4ec] border border-[#d6cfc2] rounded-sm shadow-2xl max-w-5xl w-full h-[92vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-[#dfd7c8] bg-[#efe9dc] flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded bg-red-100 text-red-700 shrink-0">
+                    <FileText size={16} />
+                  </span>
+                  <h3 className="font-editorial text-lg font-bold text-[#1f314d] truncate">
+                    {previewPdfModal.title || "Full-Text PDF Manuscript"}
+                  </h3>
+                </div>
+                <p className="text-[0.7rem] text-[#6e6a62] truncate mt-0.5 font-mono">
+                  {previewPdfModal.url.startsWith("data:")
+                    ? "Embedded PDF Stream (Base64)"
+                    : previewPdfModal.url}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => safeOpenPdf(previewPdfModal.url, previewPdfModal.title)}
+                  className="px-3 py-1.5 bg-white hover:bg-[#e8e2d2] border border-[#cfc7b9] text-[#1f314d] rounded text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
+                  title="Open in new browser tab"
+                >
+                  <ExternalLink size={13} />
+                  <span className="hidden sm:inline">Open New Tab</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const a = document.createElement("a");
+                    a.href = previewPdfModal.url;
+                    a.download = `${(previewPdfModal.title || "article").replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
+                    a.click();
+                  }}
+                  className="px-3 py-1.5 bg-[#1f314d] hover:bg-[#2c456b] text-white rounded text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
+                  title="Download PDF"
+                >
+                  <Download size={13} />
+                  <span className="hidden sm:inline">Download</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPdfModal({ isOpen: false, url: "", title: "" })}
+                  className="p-1.5 rounded hover:bg-black/10 text-2xl leading-none text-[#555] ml-1"
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body / Embedded PDF View */}
+            <div className="flex-1 bg-[#2e2e2e] relative flex items-center justify-center overflow-hidden">
+              {previewPdfModal.url ? (
+                <iframe
+                  src={previewPdfModal.url}
+                  title={previewPdfModal.title || "PDF Preview"}
+                  className="w-full h-full border-0 bg-white"
+                />
+              ) : (
+                <div className="text-center p-8 text-white">
+                  <p className="text-sm font-semibold">No PDF document loaded</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

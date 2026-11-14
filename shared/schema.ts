@@ -23,17 +23,17 @@ export interface Author {
   isCorresponding?: boolean;
   role?: string;
   department?: string;
-  institution: string;
+  institution?: string;
   email?: string;
 }
 
 export const authorSchema = z.object({
   name: z.string().min(1, "Author name is required"),
-  isCorresponding: z.boolean().optional(),
-  role: z.string().optional(),
-  department: z.string().optional(),
-  institution: z.string().min(1, "Institution is required"),
-  email: z.string().optional(),
+  isCorresponding: z.boolean().optional().default(false),
+  role: z.string().optional().default(""),
+  department: z.string().optional().default(""),
+  institution: z.string().optional().default(""),
+  email: z.string().optional().default(""),
 });
 
 // ==================== Journal Article Interface & Schema ====================
@@ -59,42 +59,42 @@ export interface JournalArticle {
 
 export const journalArticleSchema = z.object({
   id: z.string(),
-  serialNumber: z.string().min(1, "Serial number is required"),
+  serialNumber: z.string().optional().default(""),
   slug: z.string().min(1, "Slug is required"),
-  aliases: z.array(z.string()).optional(),
+  aliases: z.array(z.string()).optional().default([]),
   title: z.string().min(1, "Title is required"),
   authors: z.array(authorSchema).min(1, "At least one author is required"),
-  section: z.string().min(1, "Section is required"),
-  pages: z.string().min(1, "Pages are required"),
-  doi: z.string().optional(),
-  pdfUrl: z.string().min(1, "PDF file or URL is required"),
-  abstract: z.string().min(1, "Abstract is required"),
-  keywords: z.array(z.string()).optional(),
-  volume: z.string().min(1, "Volume is required"),
-  issue: z.string().min(1, "Issue is required"),
-  year: z.string().min(1, "Year is required"),
-  date: z.string().min(1, "Date/period is required"),
-  status: z.enum(["published", "draft", "archived"]).optional(),
+  section: z.string().optional().default("Original Research Article"),
+  pages: z.string().optional().default(""),
+  doi: z.string().optional().default(""),
+  pdfUrl: z.string().optional().default("/articles/JPSG_Manuscript_Sample.pdf"),
+  abstract: z.string().optional().default(""),
+  keywords: z.array(z.string()).optional().default([]),
+  volume: z.string().optional().default("Volume 1"),
+  issue: z.string().optional().default("Issue 1"),
+  year: z.string().optional().default("2027"),
+  date: z.string().optional().default("January–March 2027"),
+  status: z.enum(["published", "draft", "archived"]).optional().default("published"),
 });
 
 export type InsertArticle = Omit<JournalArticle, "id">;
 export const insertArticleSchema = z.object({
-  serialNumber: z.string().min(1, "Serial number is required"),
-  slug: z.string().min(1, "Slug is required"),
-  aliases: z.array(z.string()).optional(),
+  serialNumber: z.string().optional().default(""),
+  slug: z.string().optional().default(""),
+  aliases: z.array(z.string()).optional().default([]),
   title: z.string().min(1, "Title is required"),
   authors: z.array(authorSchema).min(1, "At least one author is required"),
-  section: z.string().min(1, "Section is required"),
-  pages: z.string().min(1, "Pages are required"),
-  doi: z.string().optional(),
-  pdfUrl: z.string().min(1, "PDF file or URL is required"),
-  abstract: z.string().min(1, "Abstract is required"),
-  keywords: z.array(z.string()).optional(),
-  volume: z.string().min(1, "Volume is required"),
-  issue: z.string().min(1, "Issue is required"),
-  year: z.string().min(1, "Year is required"),
-  date: z.string().min(1, "Date/period is required"),
-  status: z.enum(["published", "draft", "archived"]).optional(),
+  section: z.string().optional().default("Original Research Article"),
+  pages: z.string().optional().default(""),
+  doi: z.string().optional().default(""),
+  pdfUrl: z.string().optional().default("/articles/JPSG_Manuscript_Sample.pdf"),
+  abstract: z.string().optional().default(""),
+  keywords: z.array(z.string()).optional().default([]),
+  volume: z.string().optional().default("Volume 1"),
+  issue: z.string().optional().default("Issue 1"),
+  year: z.string().optional().default("2027"),
+  date: z.string().optional().default("January–March 2027"),
+  status: z.enum(["published", "draft", "archived"]).optional().default("published"),
 });
 
 // ==================== Editorial Board / People Interface & Schema ====================

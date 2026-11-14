@@ -184,10 +184,9 @@ export class JsonStorage implements IStorage {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "");
 
-    // Check if article already exists by slug, ID, serialNumber, or exact title
+    // Check if article already exists by slug or exact title (do not match solely on default serialNumber)
     const existingIndex = this.data.articles.findIndex(
       (a) =>
-        (insertArticle.serialNumber && a.serialNumber === insertArticle.serialNumber) ||
         (insertArticle.slug && a.slug.toLowerCase() === insertArticle.slug.toLowerCase()) ||
         a.slug.toLowerCase() === slug.toLowerCase() ||
         a.title.trim().toLowerCase() === insertArticle.title.trim().toLowerCase()
@@ -211,13 +210,14 @@ export class JsonStorage implements IStorage {
       return updated;
     }
 
-    // Determine serial number
+    // Determine serial number: if provided serialNumber is already in use, calculate next sequential
     const maxSerial = this.data.articles.reduce((max, a) => {
       const num = parseInt(a.serialNumber, 10);
       return !isNaN(num) && num > max ? num : max;
     }, 0);
     const nextNum = (maxSerial + 1).toString().padStart(2, "0");
-    const serialNumber = insertArticle.serialNumber || nextNum;
+    const serialAlreadyTaken = insertArticle.serialNumber && this.data.articles.some((a) => a.serialNumber === insertArticle.serialNumber);
+    const serialNumber = (!insertArticle.serialNumber || serialAlreadyTaken) ? nextNum : insertArticle.serialNumber;
     const id = serialNumber;
 
     const newArticle: JournalArticle = {
