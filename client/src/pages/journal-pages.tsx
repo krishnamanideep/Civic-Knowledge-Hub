@@ -3,7 +3,6 @@ import { Link } from "wouter";
 import { ArrowRight, CalendarDays, Check, FileText, Mail, MapPin, Phone, Printer, ChevronDown, ChevronUp, BookOpen, ShieldCheck, HelpCircle, Download, FileDown, ExternalLink } from "lucide-react";
 import { ContentFrame, NoteBox, PageIntro, SideCard } from "@/components/journal-layout";
 import { ManuscriptTemplatesSection } from "@/components/manuscript-templates";
-import { currentIssueArticles as staticArticles } from "@/data/articles";
 import { ArticleCard } from "@/components/article-card";
 import { subjectAreas } from "./home";
 import { useArticles, usePeople, useJournalSettings } from "@/hooks/use-journal";

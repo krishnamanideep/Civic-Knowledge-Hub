@@ -65,13 +65,56 @@ export class JsonStorage implements IStorage {
     this.data = this.loadData();
   }
 
+  private deduplicateData(data: JournalData): JournalData {
+    if (!data) return data;
+
+    // Deduplicate articles by unique key
+    const seenArticleKeys = new Set<string>();
+    const uniqueArticles: JournalArticle[] = [];
+    for (const a of data.articles || []) {
+      const slugKey = a.slug ? a.slug.toLowerCase().trim() : "";
+      const serialKey = a.serialNumber ? a.serialNumber.trim() : "";
+      const titleKey = a.title ? a.title.toLowerCase().trim() : "";
+      const idKey = a.id ? a.id.trim() : "";
+
+      const compositeKey = slugKey || serialKey || idKey || titleKey;
+      if (!seenArticleKeys.has(compositeKey)) {
+        seenArticleKeys.add(compositeKey);
+        if (slugKey) seenArticleKeys.add(slugKey);
+        if (serialKey) seenArticleKeys.add(`s-${serialKey}`);
+        uniqueArticles.push(a);
+      }
+    }
+
+    // Deduplicate people by category + name
+    const seenPeopleKeys = new Set<string>();
+    const uniquePeople: JournalPerson[] = [];
+    for (const p of data.people || []) {
+      const nameKey = `${p.category || "board_member"}-${(p.name || "").toLowerCase().trim()}`;
+      const idKey = p.id ? `id-${p.id}` : "";
+      if (!seenPeopleKeys.has(nameKey) && (!idKey || !seenPeopleKeys.has(idKey))) {
+        seenPeopleKeys.add(nameKey);
+        if (idKey) seenPeopleKeys.add(idKey);
+        uniquePeople.push(p);
+      }
+    }
+
+    return {
+      settings: data.settings || initialJournalData.settings,
+      articles: uniqueArticles,
+      people: uniquePeople,
+    };
+  }
+
   private loadData(): JournalData {
     try {
       if (fs.existsSync(this.dataFilePath)) {
         const raw = fs.readFileSync(this.dataFilePath, "utf-8");
         const parsed = JSON.parse(raw);
         if (parsed.settings && parsed.articles && parsed.people) {
-          return parsed as JournalData;
+          const cleaned = this.deduplicateData(parsed as JournalData);
+          this.saveData(cleaned);
+          return cleaned;
         }
       }
     } catch (err) {
@@ -80,13 +123,16 @@ export class JsonStorage implements IStorage {
 
     // Default initialization
     const cloned = JSON.parse(JSON.stringify(initialJournalData));
-    this.saveData(cloned);
-    return cloned;
+    const cleaned = this.deduplicateData(cloned);
+    this.saveData(cleaned);
+    return cleaned;
   }
 
   private saveData(dataToSave: JournalData = this.data) {
     try {
-      fs.writeFileSync(this.dataFilePath, JSON.stringify(dataToSave, null, 2), "utf-8");
+      const cleaned = this.deduplicateData(dataToSave);
+      this.data = cleaned;
+      fs.writeFileSync(this.dataFilePath, JSON.stringify(cleaned, null, 2), "utf-8");
     } catch (err) {
       console.error("Error writing journal data to disk:", err);
     }
@@ -108,7 +154,6 @@ export class JsonStorage implements IStorage {
   }
 
   verifyAdmin(password: string): boolean {
-    // Accepts "admin", "admin123", or "dock2027"
     return password === "admin" || password === "admin123" || password === "dock2027";
   }
 
@@ -132,10 +177,6 @@ export class JsonStorage implements IStorage {
   }
 
   async createArticle(insertArticle: InsertArticle): Promise<JournalArticle> {
-    const nextNum = (this.data.articles.length + 1).toString().padStart(2, "0");
-    const id = insertArticle.serialNumber || nextNum;
-
-    // Ensure slug is clean
     const slug =
       insertArticle.slug?.trim() ||
       insertArticle.title
@@ -143,20 +184,51 @@ export class JsonStorage implements IStorage {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "");
 
+    // Check if article already exists by slug, ID, serialNumber, or exact title
+    const existingIndex = this.data.articles.findIndex(
+      (a) =>
+        (insertArticle.serialNumber && a.serialNumber === insertArticle.serialNumber) ||
+        (insertArticle.slug && a.slug.toLowerCase() === insertArticle.slug.toLowerCase()) ||
+        a.slug.toLowerCase() === slug.toLowerCase() ||
+        a.title.trim().toLowerCase() === insertArticle.title.trim().toLowerCase()
+    );
+
+    if (existingIndex !== -1) {
+      // Update existing article instead of creating duplicate
+      const current = this.data.articles[existingIndex];
+      const updated: JournalArticle = {
+        ...current,
+        ...insertArticle,
+        id: current.id,
+        slug: insertArticle.slug?.trim() || current.slug,
+        serialNumber: insertArticle.serialNumber || current.serialNumber,
+        aliases: insertArticle.aliases || current.aliases || [],
+        keywords: insertArticle.keywords || current.keywords || [],
+        status: insertArticle.status || current.status || "published",
+      };
+      this.data.articles[existingIndex] = updated;
+      this.saveData();
+      return updated;
+    }
+
+    // Determine serial number
+    const maxSerial = this.data.articles.reduce((max, a) => {
+      const num = parseInt(a.serialNumber, 10);
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const nextNum = (maxSerial + 1).toString().padStart(2, "0");
+    const serialNumber = insertArticle.serialNumber || nextNum;
+    const id = serialNumber;
+
     const newArticle: JournalArticle = {
       ...insertArticle,
       id,
       slug,
-      serialNumber: insertArticle.serialNumber || id,
+      serialNumber,
       aliases: insertArticle.aliases || [],
       keywords: insertArticle.keywords || [],
       status: insertArticle.status || "published",
     };
-
-    // Check if ID already exists, if so generate UUID-based short ID
-    if (this.data.articles.some((a) => a.id === newArticle.id)) {
-      newArticle.id = `art-${Date.now()}`;
-    }
 
     this.data.articles.push(newArticle);
     this.saveData();
@@ -172,6 +244,8 @@ export class JsonStorage implements IStorage {
       ...current,
       ...updates,
       id: current.id, // Preserve ID
+      slug: updates.slug?.trim() || current.slug,
+      serialNumber: updates.serialNumber || current.serialNumber,
     };
 
     this.data.articles[index] = updated;
@@ -198,12 +272,40 @@ export class JsonStorage implements IStorage {
   }
 
   async createPerson(insertPerson: InsertPerson): Promise<JournalPerson> {
-    const id = `person-${Date.now()}`;
+    // Check if person already exists by name and category
+    const existingIndex = this.data.people.findIndex(
+      (p) =>
+        p.category === insertPerson.category &&
+        p.name.trim().toLowerCase() === insertPerson.name.trim().toLowerCase()
+    );
+
+    if (existingIndex !== -1) {
+      // Update existing person instead of creating duplicate
+      const current = this.data.people[existingIndex];
+      const updated: JournalPerson = {
+        ...current,
+        ...insertPerson,
+        id: current.id,
+        order: insertPerson.order || current.order,
+      };
+      this.data.people[existingIndex] = updated;
+      this.saveData();
+      return updated;
+    }
+
     const maxOrder = this.data.people.reduce((max, p) => Math.max(max, p.order || 0), 0);
+    const order = insertPerson.order !== undefined && insertPerson.order !== 0 ? insertPerson.order : maxOrder + 1;
+    const prefix = insertPerson.category === "leadership" ? "lead" : "board";
+    const id = `${prefix}-${Date.now()}`;
+
     const newPerson: JournalPerson = {
       ...insertPerson,
       id,
-      order: insertPerson.order !== undefined && insertPerson.order !== 0 ? insertPerson.order : maxOrder + 1,
+      order,
+      secondaryEmail: insertPerson.secondaryEmail || "",
+      orcid: insertPerson.orcid || "",
+      note: insertPerson.note || "",
+      address: insertPerson.address || "",
     };
 
     this.data.people.push(newPerson);
@@ -238,11 +340,16 @@ export class JsonStorage implements IStorage {
   }
 
   async reorderPeople(orderedIds: string[]): Promise<JournalPerson[]> {
+    const orderMap = new Map<string, number>();
     orderedIds.forEach((id, index) => {
-      const person = this.data.people.find((p) => p.id === id);
-      if (person) {
-        person.order = index + 1;
+      orderMap.set(id, index + 1);
+    });
+
+    this.data.people = this.data.people.map((p) => {
+      if (orderMap.has(p.id)) {
+        return { ...p, order: orderMap.get(p.id)! };
       }
+      return p;
     });
 
     this.data.people.sort((a, b) => a.order - b.order);
@@ -264,9 +371,10 @@ export class JsonStorage implements IStorage {
   }
 
   async resetToDefault(): Promise<JournalData> {
-    this.data = JSON.parse(JSON.stringify(initialJournalData));
-    this.saveData();
-    return this.data;
+    const cloned = JSON.parse(JSON.stringify(initialJournalData));
+    const cleaned = this.deduplicateData(cloned);
+    this.saveData(cleaned);
+    return cleaned;
   }
 }
 

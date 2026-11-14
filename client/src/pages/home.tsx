@@ -14,7 +14,6 @@ import {
   ExternalLink,
   Lock,
 } from "lucide-react";
-import { currentIssueArticles as staticArticles } from "../data/articles";
 import { useArticles, usePeople, useJournalSettings } from "@/hooks/use-journal";
 
 export const subjectAreas = [

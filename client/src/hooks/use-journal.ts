@@ -9,11 +9,51 @@ import {
 } from "@shared/schema";
 import { initialJournalData } from "@shared/default-data";
 import { currentIssueArticles, setDynamicArticles } from "@/data/articles";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 const LOCAL_STORAGE_KEY = "jpsg_journal_data";
 
-// Helper to get local data safely
+// Utility to deduplicate articles and people strictly
+export function deduplicateJournalData(data: JournalData): JournalData {
+  if (!data) return data;
+
+  const seenArticleKeys = new Set<string>();
+  const uniqueArticles: JournalArticle[] = [];
+  for (const a of data.articles || []) {
+    const slugKey = a.slug ? a.slug.toLowerCase().trim() : "";
+    const serialKey = a.serialNumber ? a.serialNumber.trim() : "";
+    const titleKey = a.title ? a.title.toLowerCase().trim() : "";
+    const idKey = a.id ? a.id.trim() : "";
+
+    const primaryKey = slugKey || serialKey || idKey || titleKey;
+    if (!seenArticleKeys.has(primaryKey)) {
+      seenArticleKeys.add(primaryKey);
+      if (slugKey) seenArticleKeys.add(slugKey);
+      if (serialKey) seenArticleKeys.add(`s-${serialKey}`);
+      uniqueArticles.push(a);
+    }
+  }
+
+  const seenPeopleKeys = new Set<string>();
+  const uniquePeople: JournalPerson[] = [];
+  for (const p of data.people || []) {
+    const nameKey = `${p.category || "board_member"}-${(p.name || "").toLowerCase().trim()}`;
+    const idKey = p.id ? `id-${p.id}` : "";
+    if (!seenPeopleKeys.has(nameKey) && (!idKey || !seenPeopleKeys.has(idKey))) {
+      seenPeopleKeys.add(nameKey);
+      if (idKey) seenPeopleKeys.add(idKey);
+      uniquePeople.push(p);
+    }
+  }
+
+  return {
+    settings: data.settings || initialJournalData.settings,
+    articles: uniqueArticles,
+    people: uniquePeople,
+  };
+}
+
+// Helper to get local data safely with deduplication
 export function getLocalJournalData(): JournalData {
   if (typeof window === "undefined") {
     return initialJournalData;
@@ -23,7 +63,8 @@ export function getLocalJournalData(): JournalData {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.articles) && Array.isArray(parsed.people) && parsed.settings) {
-        return parsed as JournalData;
+        const cleaned = deduplicateJournalData(parsed as JournalData);
+        return cleaned;
       }
     }
   } catch (err) {
@@ -34,29 +75,62 @@ export function getLocalJournalData(): JournalData {
   return initialJournalData;
 }
 
-// Helper to save local data safely
+// Helper to save local data safely with deduplication
 export function saveLocalJournalData(data: JournalData): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-    setDynamicArticles(data.articles);
+    const cleaned = deduplicateJournalData(data);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleaned));
+    setDynamicArticles(cleaned.articles);
   } catch (err) {
     console.warn("Could not write journal data to localStorage:", err);
   }
 }
 
-// Local mutations fallback helpers
+// Local mutations fallback helpers with deduplication
 function localCreateArticle(article: InsertArticle): JournalArticle {
   const current = getLocalJournalData();
-  const id = article.serialNumber || String(Date.now());
+  const slug =
+    article.slug?.trim() ||
+    article.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+
+  // Check if article already exists by slug, ID, serialNumber, or title
+  const existingIdx = current.articles.findIndex(
+    (a) =>
+      (article.serialNumber && a.serialNumber === article.serialNumber) ||
+      (article.slug && a.slug.toLowerCase() === article.slug.toLowerCase()) ||
+      a.slug.toLowerCase() === slug.toLowerCase() ||
+      a.title.trim().toLowerCase() === article.title.trim().toLowerCase()
+  );
+
+  const maxSerial = current.articles.reduce((max, a) => {
+    const num = parseInt(a.serialNumber, 10);
+    return !isNaN(num) && num > max ? num : max;
+  }, 0);
+  const nextNum = (maxSerial + 1).toString().padStart(2, "0");
+  const serialNumber = article.serialNumber || (existingIdx !== -1 ? current.articles[existingIdx].serialNumber : nextNum);
+  const id = existingIdx !== -1 ? current.articles[existingIdx].id : serialNumber;
+
   const newArticle: JournalArticle = {
     ...article,
     id,
+    slug,
+    serialNumber,
     doi: article.doi || "",
     aliases: article.aliases || [],
     keywords: article.keywords || [],
+    status: article.status || "published",
   };
-  current.articles.push(newArticle);
+
+  if (existingIdx !== -1) {
+    current.articles[existingIdx] = newArticle;
+  } else {
+    current.articles.push(newArticle);
+  }
+
   saveLocalJournalData(current);
   return newArticle;
 }
@@ -70,6 +144,7 @@ function localUpdateArticle(id: string, updates: Partial<InsertArticle>): Journa
   current.articles[idx] = {
     ...current.articles[idx],
     ...updates,
+    id: current.articles[idx].id,
   };
   saveLocalJournalData(current);
   return current.articles[idx];
@@ -84,17 +159,33 @@ function localDeleteArticle(id: string): boolean {
 
 function localCreatePerson(person: InsertPerson): JournalPerson {
   const current = getLocalJournalData();
-  const id = `${person.category === "leadership" ? "lead" : "board"}-${Date.now()}`;
+  const existingIdx = current.people.findIndex(
+    (p) =>
+      p.category === person.category &&
+      p.name.trim().toLowerCase() === person.name.trim().toLowerCase()
+  );
+
+  const prefix = person.category === "leadership" ? "lead" : "board";
+  const id = existingIdx !== -1 ? current.people[existingIdx].id : `${prefix}-${Date.now()}`;
+  const maxOrder = current.people.reduce((max, p) => Math.max(max, p.order || 0), 0);
+  const order = person.order !== undefined && person.order !== 0 ? person.order : (existingIdx !== -1 ? current.people[existingIdx].order : maxOrder + 1);
+
   const newPerson: JournalPerson = {
     ...person,
     id,
+    order,
     secondaryEmail: person.secondaryEmail || "",
     orcid: person.orcid || "",
     note: person.note || "",
     address: person.address || "",
-    order: person.order ?? current.people.length + 1,
   };
-  current.people.push(newPerson);
+
+  if (existingIdx !== -1) {
+    current.people[existingIdx] = newPerson;
+  } else {
+    current.people.push(newPerson);
+  }
+
   saveLocalJournalData(current);
   return newPerson;
 }
@@ -108,6 +199,7 @@ function localUpdatePerson(id: string, updates: Partial<InsertPerson>): JournalP
   current.people[idx] = {
     ...current.people[idx],
     ...updates,
+    id: current.people[idx].id,
   };
   saveLocalJournalData(current);
   return current.people[idx];
@@ -164,8 +256,9 @@ export function useJournalData() {
         if (res.ok && contentType.includes("application/json")) {
           const data = (await res.json()) as JournalData;
           if (data && Array.isArray(data.articles) && data.articles.length > 0) {
-            saveLocalJournalData(data);
-            return data;
+            const cleaned = deduplicateJournalData(data);
+            saveLocalJournalData(cleaned);
+            return cleaned;
           }
         }
       } catch {
@@ -188,8 +281,23 @@ export function useJournalData() {
 
 export function useArticles(): { articles: JournalArticle[]; isLoading: boolean } {
   const { data, isLoading } = useJournalData();
-  const articles =
+  const rawArticles =
     data?.articles && data.articles.length > 0 ? data.articles : currentIssueArticles;
+
+  // Guarantee strict deduplication in UI
+  const articles = useMemo(() => {
+    const seen = new Set<string>();
+    const result: JournalArticle[] = [];
+    for (const art of rawArticles) {
+      const key = (art.slug || art.id || art.serialNumber || art.title).toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(art);
+      }
+    }
+    return result;
+  }, [rawArticles]);
+
   return { articles, isLoading };
 }
 
@@ -213,15 +321,32 @@ export function usePeople(): {
   isLoading: boolean;
 } {
   const { data, isLoading } = useJournalData();
-  const allPeople = data?.people || [];
+  const rawPeople = data?.people || [];
 
-  const leadership = allPeople
-    .filter((p) => p.category === "leadership")
-    .sort((a, b) => a.order - b.order);
+  const allPeople = useMemo(() => {
+    const seen = new Set<string>();
+    const result: JournalPerson[] = [];
+    for (const p of rawPeople) {
+      const key = `${p.category || "board_member"}-${(p.name || "").toLowerCase().trim()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(p);
+      }
+    }
+    return result;
+  }, [rawPeople]);
 
-  const boardMembers = allPeople
-    .filter((p) => p.category === "board_member")
-    .sort((a, b) => a.order - b.order);
+  const leadership = useMemo(() => {
+    return allPeople
+      .filter((p) => p.category === "leadership")
+      .sort((a, b) => a.order - b.order);
+  }, [allPeople]);
+
+  const boardMembers = useMemo(() => {
+    return allPeople
+      .filter((p) => p.category === "board_member")
+      .sort((a, b) => a.order - b.order);
+  }, [allPeople]);
 
   return { leadership, boardMembers, allPeople, isLoading };
 }
@@ -250,10 +375,21 @@ export function useAdminMutations() {
         });
         const contentType = res.headers.get("content-type") || "";
         if (res.ok && contentType.includes("application/json")) {
-          const created = await res.json();
-          // Also sync to local storage
+          const created = (await res.json()) as JournalArticle;
+          // Sync to local storage with deduplication
           const current = getLocalJournalData();
-          current.articles.push(created);
+          const existingIdx = current.articles.findIndex(
+            (a) =>
+              a.id === created.id ||
+              a.slug.toLowerCase() === created.slug.toLowerCase() ||
+              (created.serialNumber && a.serialNumber === created.serialNumber) ||
+              a.title.trim().toLowerCase() === created.title.trim().toLowerCase()
+          );
+          if (existingIdx !== -1) {
+            current.articles[existingIdx] = created;
+          } else {
+            current.articles.push(created);
+          }
           saveLocalJournalData(current);
           return created;
         }
@@ -275,9 +411,9 @@ export function useAdminMutations() {
         });
         const contentType = res.headers.get("content-type") || "";
         if (res.ok && contentType.includes("application/json")) {
-          const updated = await res.json();
+          const updated = (await res.json()) as JournalArticle;
           const current = getLocalJournalData();
-          const idx = current.articles.findIndex((a) => a.id === id);
+          const idx = current.articles.findIndex((a) => a.id === id || a.slug === id);
           if (idx !== -1) {
             current.articles[idx] = updated;
             saveLocalJournalData(current);
@@ -300,7 +436,7 @@ export function useAdminMutations() {
         });
         if (res.ok) {
           const current = getLocalJournalData();
-          current.articles = current.articles.filter((a) => a.id !== id);
+          current.articles = current.articles.filter((a) => a.id !== id && a.slug !== id);
           saveLocalJournalData(current);
           return true;
         }
@@ -322,9 +458,18 @@ export function useAdminMutations() {
         });
         const contentType = res.headers.get("content-type") || "";
         if (res.ok && contentType.includes("application/json")) {
-          const created = await res.json();
+          const created = (await res.json()) as JournalPerson;
           const current = getLocalJournalData();
-          current.people.push(created);
+          const existingIdx = current.people.findIndex(
+            (p) =>
+              p.id === created.id ||
+              (p.category === created.category && p.name.trim().toLowerCase() === created.name.trim().toLowerCase())
+          );
+          if (existingIdx !== -1) {
+            current.people[existingIdx] = created;
+          } else {
+            current.people.push(created);
+          }
           saveLocalJournalData(current);
           return created;
         }
@@ -346,7 +491,7 @@ export function useAdminMutations() {
         });
         const contentType = res.headers.get("content-type") || "";
         if (res.ok && contentType.includes("application/json")) {
-          const updated = await res.json();
+          const updated = (await res.json()) as JournalPerson;
           const current = getLocalJournalData();
           const idx = current.people.findIndex((p) => p.id === id);
           if (idx !== -1) {

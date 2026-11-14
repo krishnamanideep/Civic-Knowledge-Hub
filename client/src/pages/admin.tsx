@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import {
   BookOpen,
@@ -25,6 +25,7 @@ import {
   Mail,
   Globe,
   HelpCircle,
+  Loader2,
 } from "lucide-react";
 import {
   useJournalData,
@@ -93,6 +94,9 @@ export default function AdminPage() {
   });
   const [keywordsText, setKeywordsText] = useState("");
   const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [isSubmittingArticle, setIsSubmittingArticle] = useState(false);
+  const [isSubmittingPerson, setIsSubmittingPerson] = useState(false);
+  const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
 
   // Person Modal State
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
@@ -205,7 +209,13 @@ export default function AdminPage() {
 
   // Open Article Form
   const openNewArticleModal = () => {
-    const nextNum = ((journalData?.articles?.length || 0) + 1).toString().padStart(2, "0");
+    const rawArticles = journalData?.articles || [];
+    const maxSerial = rawArticles.reduce((max, a) => {
+      const num = parseInt(a.serialNumber, 10);
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const nextNum = (maxSerial + 1).toString().padStart(2, "0");
+
     setArticleForm({
       serialNumber: nextNum,
       slug: "",
@@ -264,6 +274,8 @@ export default function AdminPage() {
 
   const handleSaveArticle = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingArticle) return;
+
     if (!articleForm.title.trim()) {
       toast({ title: "Title Required", description: "Please enter the article title.", variant: "destructive" });
       return;
@@ -288,6 +300,7 @@ export default function AdminPage() {
       pdfUrl: articleForm.pdfUrl || "/articles/JPSG_Manuscript_Sample.pdf",
     };
 
+    setIsSubmittingArticle(true);
     try {
       if (editingArticleId) {
         await mutations.updateArticle.mutateAsync({ id: editingArticleId, updates: payload });
@@ -299,6 +312,8 @@ export default function AdminPage() {
       setIsArticleModalOpen(false);
     } catch (err: any) {
       toast({ title: "Save Failed", description: err.message || "Failed to save article", variant: "destructive" });
+    } finally {
+      setIsSubmittingArticle(false);
     }
   };
 
@@ -393,11 +408,14 @@ export default function AdminPage() {
 
   const handleSavePerson = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingPerson) return;
+
     if (!personForm.name.trim()) {
       toast({ title: "Name Required", description: "Please enter the person's full name.", variant: "destructive" });
       return;
     }
 
+    setIsSubmittingPerson(true);
     try {
       if (editingPersonId) {
         await mutations.updatePerson.mutateAsync({ id: editingPersonId, updates: personForm });
@@ -409,6 +427,8 @@ export default function AdminPage() {
       setIsPersonModalOpen(false);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSubmittingPerson(false);
     }
   };
 
@@ -444,8 +464,10 @@ export default function AdminPage() {
   // Save Settings
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingSettings) return;
     if (!settingsForm) return;
 
+    setIsSubmittingSettings(true);
     try {
       await mutations.updateSettings.mutateAsync(settingsForm);
       toast({
@@ -454,6 +476,8 @@ export default function AdminPage() {
       });
     } catch (err: any) {
       toast({ title: "Error Saving Settings", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSubmittingSettings(false);
     }
   };
 
@@ -549,17 +573,41 @@ export default function AdminPage() {
     );
   }
 
-  const articles = journalData?.articles || [];
-  const people = journalData?.people || [];
+  const rawArticles = journalData?.articles || [];
+  const articles = useMemo(() => {
+    const seen = new Set<string>();
+    return rawArticles.filter((a) => {
+      const key = (a.slug || a.id || a.serialNumber || a.title).toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [rawArticles]);
+
+  const rawPeople = journalData?.people || [];
+  const people = useMemo(() => {
+    const seen = new Set<string>();
+    return rawPeople.filter((p) => {
+      const key = `${p.category || "board_member"}-${(p.name || "").toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [rawPeople]);
+
   const settings = journalData?.settings;
 
-  const leadershipList = people
-    .filter((p) => p.category === "leadership")
-    .sort((a, b) => a.order - b.order);
+  const leadershipList = useMemo(() => {
+    return people
+      .filter((p) => p.category === "leadership")
+      .sort((a, b) => a.order - b.order);
+  }, [people]);
 
-  const boardMemberList = people
-    .filter((p) => p.category === "board_member")
-    .sort((a, b) => a.order - b.order);
+  const boardMemberList = useMemo(() => {
+    return people
+      .filter((p) => p.category === "board_member")
+      .sort((a, b) => a.order - b.order);
+  }, [people]);
 
   const filteredArticles = articles.filter((art) => {
     const q = articleSearch.toLowerCase().trim();
@@ -1148,9 +1196,11 @@ export default function AdminPage() {
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary px-5 py-2.5 text-xs font-bold shadow-sm flex items-center gap-2"
+                  disabled={isSubmittingSettings}
+                  className="btn-primary px-5 py-2.5 text-xs font-bold shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Check size={14} /> Save All Settings
+                  {isSubmittingSettings ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                  <span>{isSubmittingSettings ? "Saving Settings..." : "Save All Settings"}</span>
                 </button>
               </div>
             </div>
@@ -1386,9 +1436,11 @@ export default function AdminPage() {
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="submit"
-                className="btn-primary px-7 py-3 text-sm font-bold shadow flex items-center gap-2"
+                disabled={isSubmittingSettings}
+                className="btn-primary px-7 py-3 text-sm font-bold shadow flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Check size={16} /> Save All Changes
+                {isSubmittingSettings ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                <span>{isSubmittingSettings ? "Saving Changes..." : "Save All Changes"}</span>
               </button>
             </div>
           </form>
@@ -1770,9 +1822,17 @@ export default function AdminPage() {
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary px-6 py-2 text-xs font-bold shadow-sm"
+                  disabled={isSubmittingArticle}
+                  className="btn-primary px-6 py-2 text-xs font-bold shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {editingArticleId ? "Save Article Changes" : "Publish Article to Website"}
+                  {isSubmittingArticle && <Loader2 size={13} className="animate-spin" />}
+                  <span>
+                    {isSubmittingArticle
+                      ? "Saving..."
+                      : editingArticleId
+                      ? "Save Article Changes"
+                      : "Publish Article to Website"}
+                  </span>
                 </button>
               </div>
             </form>
@@ -1966,9 +2026,17 @@ export default function AdminPage() {
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary px-6 py-2 text-xs font-bold shadow-sm"
+                  disabled={isSubmittingPerson}
+                  className="btn-primary px-6 py-2 text-xs font-bold shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {editingPersonId ? "Save Member Details" : "Add to Editorial Board"}
+                  {isSubmittingPerson && <Loader2 size={13} className="animate-spin" />}
+                  <span>
+                    {isSubmittingPerson
+                      ? "Saving..."
+                      : editingPersonId
+                      ? "Save Member Details"
+                      : "Add to Editorial Board"}
+                  </span>
                 </button>
               </div>
             </form>

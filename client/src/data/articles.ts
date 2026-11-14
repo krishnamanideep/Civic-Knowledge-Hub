@@ -207,7 +207,16 @@ let _dynamicArticles: JournalArticle[] = currentIssueArticles;
 
 export function setDynamicArticles(articles: JournalArticle[]) {
   if (Array.isArray(articles) && articles.length > 0) {
-    _dynamicArticles = articles;
+    const seen = new Set<string>();
+    const unique: JournalArticle[] = [];
+    for (const a of articles) {
+      const key = (a.slug || a.id || a.serialNumber || a.title).toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(a);
+      }
+    }
+    _dynamicArticles = unique;
   }
 }
 
