@@ -26,6 +26,12 @@ import {
   Globe,
   HelpCircle,
   Loader2,
+  Copy,
+  Share2,
+  CloudUpload,
+  GitBranch,
+  RefreshCw,
+  Layers,
 } from "lucide-react";
 import {
   useJournalData,
@@ -33,6 +39,7 @@ import {
   useArticles,
   usePeople,
   useJournalSettings,
+  saveLocalJournalData,
 } from "@/hooks/use-journal";
 import {
   type JournalArticle,
@@ -41,11 +48,23 @@ import {
   type InsertPerson,
   type Author,
   type JournalSettings as JournalSettingsType,
+  type JournalData,
 } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { savePdfToIndexedDB, resolvePdfUrl, safeOpenPdf, safeDownloadPdf } from "@/lib/pdf-storage";
+import {
+  getCloudSyncConfig,
+  saveCloudSyncConfig,
+  downloadJsonBackup,
+  copyJsonToClipboard,
+  parseImportedJson,
+  pushToCloudSyncUrl,
+  fetchFromCloudSyncUrl,
+  deployToGitHubRepo,
+  type CloudSyncConfig,
+} from "@/lib/cloud-sync";
 
-type TabType = "dashboard" | "articles" | "people" | "settings" | "uploads";
+type TabType = "dashboard" | "articles" | "people" | "settings" | "uploads" | "sync";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -127,6 +146,141 @@ export default function AdminPage() {
       setSettingsForm(journalData.settings);
     }
   }, [journalData?.settings]);
+
+  // Cloud Sync & Deployment State
+  const [syncConfig, setSyncConfig] = useState<CloudSyncConfig>(() => getCloudSyncConfig());
+  const [cloudUrlInput, setCloudUrlInput] = useState(syncConfig.cloudUrl || "");
+  const [cloudApiKeyInput, setCloudApiKeyInput] = useState(syncConfig.cloudApiKey || "");
+  const [githubTokenInput, setGithubTokenInput] = useState(syncConfig.githubToken || "");
+  const [githubRepoInput, setGithubRepoInput] = useState(syncConfig.githubRepo || "krishnamanideep/Civic-Knowledge-Hub");
+  const [githubBranchInput, setGithubBranchInput] = useState(syncConfig.githubBranch || "main");
+  const [isDeployingGitHub, setIsDeployingGitHub] = useState(false);
+  const [deploySuccessMsg, setDeploySuccessMsg] = useState<string | null>(null);
+  const [deployErrorMsg, setDeployErrorMsg] = useState<string | null>(null);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  const [importJsonText, setImportJsonText] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+
+  // GitHub Deploy Handler
+  const handleDeployToGitHub = async () => {
+    if (!githubTokenInput.trim()) {
+      toast({
+        title: "GitHub Token Required",
+        description: "Please enter a GitHub Personal Access Token to commit and deploy directly.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!journalData) return;
+
+    setIsDeployingGitHub(true);
+    setDeploySuccessMsg(null);
+    setDeployErrorMsg(null);
+
+    try {
+      const updatedConfig: CloudSyncConfig = {
+        ...syncConfig,
+        githubToken: githubTokenInput.trim(),
+        githubRepo: githubRepoInput.trim(),
+        githubBranch: githubBranchInput.trim(),
+      };
+      setSyncConfig(updatedConfig);
+      saveCloudSyncConfig(updatedConfig);
+
+      const result = await deployToGitHubRepo(
+        journalData,
+        githubTokenInput.trim(),
+        githubRepoInput.trim(),
+        githubBranchInput.trim()
+      );
+
+      setDeploySuccessMsg(result.message);
+      toast({
+        title: "Deployment Triggered Successfully! 🚀",
+        description: "Changes committed to GitHub. Vercel is now building and deploying live to all devices.",
+      });
+    } catch (err: any) {
+      setDeployErrorMsg(err.message || "Failed to deploy to GitHub.");
+      toast({
+        title: "Deployment Failed",
+        description: err.message || "Could not commit to GitHub repository.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeployingGitHub(false);
+    }
+  };
+
+  // Cloud Sync Save Handler
+  const handleSaveCloudSync = async () => {
+    const updatedConfig: CloudSyncConfig = {
+      ...syncConfig,
+      cloudUrl: cloudUrlInput.trim(),
+      cloudApiKey: cloudApiKeyInput.trim(),
+    };
+    setSyncConfig(updatedConfig);
+    saveCloudSyncConfig(updatedConfig);
+
+    if (cloudUrlInput.trim() && journalData) {
+      setIsCloudSyncing(true);
+      try {
+        await pushToCloudSyncUrl(journalData, cloudUrlInput.trim());
+        toast({
+          title: "Cloud Sync Connected! 🌐",
+          description: "All journal data uploaded to cloud. All other devices will now load live data from this endpoint.",
+        });
+      } catch (err: any) {
+        toast({
+          title: "Cloud Sync Failed",
+          description: err.message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsCloudSyncing(false);
+      }
+    } else {
+      toast({ title: "Configuration Saved", description: "Cloud sync settings updated." });
+    }
+  };
+
+  // Export handlers
+  const handleExportJson = () => {
+    if (!journalData) return;
+    downloadJsonBackup(journalData);
+    toast({ title: "Journal Data Exported", description: "Downloaded complete JPSG journal JSON file." });
+  };
+
+  const handleCopyJson = async () => {
+    if (!journalData) return;
+    const ok = await copyJsonToClipboard(journalData);
+    if (ok) {
+      toast({ title: "Copied to Clipboard!", description: "Complete journal JSON copied to your clipboard." });
+    }
+  };
+
+  // Import handler
+  const handleImportJson = (rawContent?: string) => {
+    const content = rawContent || importJsonText;
+    if (!content.trim()) {
+      toast({ title: "Empty Input", description: "Please paste valid JSON or choose a file.", variant: "destructive" });
+      return;
+    }
+    setIsImporting(true);
+    try {
+      const parsed = parseImportedJson(content);
+      saveLocalJournalData(parsed);
+      refetch();
+      toast({
+        title: "Data Imported Successfully! 🎉",
+        description: `Imported ${parsed.articles.length} articles, ${parsed.people.length} board members, and particulars.`,
+      });
+      setImportJsonText("");
+    } catch (err: any) {
+      toast({ title: "Import Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   // Handle Login
   const handleLogin = (e?: React.FormEvent) => {
@@ -689,6 +843,13 @@ export default function AdminPage() {
             >
               docknowledge.org <ExternalLink size={12} />
             </a>
+            <button
+              type="button"
+              onClick={() => setActiveTab("sync")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[#a45a40] hover:bg-[#8e4933] text-white font-bold transition-colors shadow-xs"
+            >
+              <Globe size={13} /> Deploy to Live Site
+            </button>
             <Link
               href="/"
               target="_blank"
@@ -716,6 +877,7 @@ export default function AdminPage() {
             { id: "people", label: `Editorial Board (${people.length})`, icon: Users },
             { id: "settings", label: "Journal Titles & Particulars", icon: Settings },
             { id: "uploads", label: "PDF File Uploader", icon: Upload },
+            { id: "sync", label: "Global Deploy & Cloud Sync", icon: Globe },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -733,6 +895,35 @@ export default function AdminPage() {
           ))}
         </div>
       </nav>
+
+      {/* Live Deployment Status Notice Banner */}
+      <div className="bg-[#fff9e6] border-b border-[#f1e1a6] py-2.5 px-4 text-xs text-[#7d5e12]">
+        <div className="page-wrap flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#f1d070] text-[#5c4204] font-bold text-[0.7rem] shrink-0">
+              i
+            </span>
+            <span>
+              <strong>Global Reflection Notice:</strong> All edits are saved immediately in this browser. To reflect changes across all other devices, phones, and sessions worldwide, use the{" "}
+              <button
+                type="button"
+                onClick={() => setActiveTab("sync")}
+                className="underline font-bold text-[#a45a40] hover:text-[#1f314d]"
+              >
+                Global Deploy & Cloud Sync tool
+              </button>{" "}
+              to publish to GitHub/Vercel or connect a cloud database.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("sync")}
+            className="px-2.5 py-1 bg-[#1f314d] hover:bg-[#2b446b] text-white rounded text-[0.7rem] font-bold shrink-0 inline-flex items-center gap-1 shadow-2xs"
+          >
+            <Globe size={11} /> Open Deploy Panel →
+          </button>
+        </div>
+      </div>
 
       {/* Main Admin Content Container */}
       <div className="page-wrap py-8">
@@ -1578,6 +1769,297 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ==================== TAB 6: GLOBAL DEPLOY & CLOUD SYNC ==================== */}
+        {activeTab === "sync" && (
+          <div className="space-y-8 enter">
+            <div>
+              <div className="flex items-center gap-2">
+                <Globe className="text-[#a45a40]" size={26} />
+                <h1 className="font-editorial text-3xl font-bold text-[#1f314d]">
+                  Global Deploy & Multi-Device Synchronization
+                </h1>
+              </div>
+              <p className="text-sm text-[#5c5f69] mt-1 max-w-3xl">
+                When editing in the admin panel on a static hosting platform like Vercel, changes are saved in this browser. Use the tools below to deploy your updates globally across every device, visitor, and session worldwide.
+              </p>
+            </div>
+
+            {/* Quick Status Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-[#fdfbf7] border border-[#d6cfc2] rounded-sm">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#77736d]">Current State</span>
+                <p className="font-editorial text-xl font-bold text-[#1f314d] mt-1">
+                  {articles.length} Articles · {people.length} Board Members
+                </p>
+                <p className="text-xs text-[#527d24] mt-0.5 font-semibold">Active in browser memory</p>
+              </div>
+
+              <div className="p-4 bg-[#fdfbf7] border border-[#d6cfc2] rounded-sm">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#77736d]">Live GitHub Deployment</span>
+                <p className="font-editorial text-xl font-bold text-[#1f314d] mt-1 truncate">
+                  {syncConfig.githubRepo || "Civic-Knowledge-Hub"}
+                </p>
+                <p className="text-xs text-[#a45a40] mt-0.5 font-semibold">
+                  Branch: {syncConfig.githubBranch || "main"}
+                </p>
+              </div>
+
+              <div className="p-4 bg-[#fdfbf7] border border-[#d6cfc2] rounded-sm">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#77736d]">Cloud Sync Database</span>
+                <p className="font-editorial text-xl font-bold text-[#1f314d] mt-1 truncate">
+                  {syncConfig.cloudUrl ? "Connected" : "Not Configured"}
+                </p>
+                <p className="text-xs text-[#6e6a62] mt-0.5">
+                  {syncConfig.cloudUrl ? syncConfig.cloudUrl : "Optional instant multi-device sync"}
+                </p>
+              </div>
+            </div>
+
+            {/* SECTION 1: GITHUB & VERCEL AUTO-DEPLOY */}
+            <div className="border border-[#d6cfc2] bg-[#fbf9f4] p-6 rounded-sm shadow-sm space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <GitBranch className="text-[#1f314d]" size={20} />
+                    <h2 className="font-editorial text-xl font-bold text-[#1f314d]">
+                      Option 1: Deploy Directly to Live Website (GitHub & Vercel)
+                    </h2>
+                  </div>
+                  <p className="text-xs text-[#676a74] mt-1">
+                    This pushes your current articles and settings directly to your GitHub repository (<code className="font-mono bg-white px-1.5 py-0.5 border border-[#dfd7c9] rounded">krishnamanideep/Civic-Knowledge-Hub</code>). Vercel automatically detects the commit, runs the production build, and deploys it live to all visitors worldwide in ~60 seconds.
+                  </p>
+                </div>
+                <span className="bg-[#527d24] text-white text-[0.65rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0">
+                  Recommended
+                </span>
+              </div>
+
+              {deploySuccessMsg && (
+                <div className="p-3 bg-emerald-50 border-l-4 border-emerald-600 text-xs text-emerald-800">
+                  {deploySuccessMsg}
+                </div>
+              )}
+
+              {deployErrorMsg && (
+                <div className="p-3 bg-red-50 border-l-4 border-red-600 text-xs text-red-800">
+                  {deployErrorMsg}
+                </div>
+              )}
+
+              <div className="grid gap-3 sm:grid-cols-2 text-xs">
+                <div className="sm:col-span-2">
+                  <label className="block font-bold uppercase tracking-wider text-[#494c55] mb-1">
+                    GitHub Personal Access Token (Classic or Fine-Grained with "Contents: Read and write") *
+                  </label>
+                  <input
+                    type="password"
+                    value={githubTokenInput}
+                    onChange={(e) => setGithubTokenInput(e.target.value)}
+                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="w-full px-3 py-2 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs"
+                  />
+                  <p className="text-[0.7rem] text-[#6e6a62] mt-1">
+                    Stored safely in your local browser only. Never shared with any third party. You can generate one at{" "}
+                    <a
+                      href="https://github.com/settings/tokens"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#a45a40] underline font-semibold"
+                    >
+                      github.com/settings/tokens
+                    </a>.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block font-bold uppercase tracking-wider text-[#494c55] mb-1">
+                    Repository
+                  </label>
+                  <input
+                    type="text"
+                    value={githubRepoInput}
+                    onChange={(e) => setGithubRepoInput(e.target.value)}
+                    placeholder="krishnamanideep/Civic-Knowledge-Hub"
+                    className="w-full px-3 py-2 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold uppercase tracking-wider text-[#494c55] mb-1">
+                    Branch
+                  </label>
+                  <input
+                    type="text"
+                    value={githubBranchInput}
+                    onChange={(e) => setGithubBranchInput(e.target.value)}
+                    placeholder="main"
+                    className="w-full px-3 py-2 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleDeployToGitHub}
+                  disabled={isDeployingGitHub}
+                  className="btn-primary px-5 py-2.5 text-xs font-bold shadow flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isDeployingGitHub ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
+                  <span>{isDeployingGitHub ? "Committing to GitHub..." : "🚀 Deploy Changes to Live Site"}</span>
+                </button>
+                <a
+                  href={`https://github.com/${githubRepoInput}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary px-3.5 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
+                >
+                  <ExternalLink size={12} /> View GitHub Repository
+                </a>
+              </div>
+            </div>
+
+            {/* SECTION 2: INSTANT CLOUD SYNC */}
+            <div className="border border-[#d6cfc2] bg-[#fbf9f4] p-6 rounded-sm shadow-sm space-y-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <CloudUpload className="text-[#1f314d]" size={20} />
+                  <h2 className="font-editorial text-xl font-bold text-[#1f314d]">
+                    Option 2: Instant Cloud Database Sync (Zero Rebuild Wait Time)
+                  </h2>
+                </div>
+                <p className="text-xs text-[#676a74] mt-1">
+                  Connect a cloud JSON store (such as Firebase Realtime Database or a REST API). Whenever an admin saves on any device, it syncs immediately. Any other visitor opening the website loads the latest data instantly in under 1 second.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 text-xs">
+                <div>
+                  <label className="block font-bold uppercase tracking-wider text-[#494c55] mb-1">
+                    Cloud Database REST URL
+                  </label>
+                  <input
+                    type="text"
+                    value={cloudUrlInput}
+                    onChange={(e) => setCloudUrlInput(e.target.value)}
+                    placeholder="https://your-project.firebaseio.com/journal.json"
+                    className="w-full px-3 py-2 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold uppercase tracking-wider text-[#494c55] mb-1">
+                    API Key / Auth Token (Optional)
+                  </label>
+                  <input
+                    type="password"
+                    value={cloudApiKeyInput}
+                    onChange={(e) => setCloudApiKeyInput(e.target.value)}
+                    placeholder="Optional Authorization token or API Key"
+                    className="w-full px-3 py-2 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleSaveCloudSync}
+                  disabled={isCloudSyncing}
+                  className="btn-primary px-4 py-2 text-xs font-bold shadow flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isCloudSyncing ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                  <span>{isCloudSyncing ? "Syncing..." : "Save & Sync to Cloud"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION 3: 1-CLICK BACKUP & TRANSFER */}
+            <div className="border border-[#d6cfc2] bg-[#fbf9f4] p-6 rounded-sm shadow-sm space-y-5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Download className="text-[#1f314d]" size={20} />
+                  <h2 className="font-editorial text-xl font-bold text-[#1f314d]">
+                    Option 3: 1-Click Export, Backup & Manual Data Transfer
+                  </h2>
+                </div>
+                <p className="text-xs text-[#676a74] mt-1">
+                  Export your complete journal data (all articles, people, and particulars) as a portable JSON file. You can import this file on any other phone, tablet, or browser to transfer everything instantly.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleExportJson}
+                  className="btn-primary px-4 py-2.5 text-xs font-bold shadow flex items-center gap-2"
+                >
+                  <Download size={14} /> Download Journal Data (.JSON)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyJson}
+                  className="btn-secondary px-4 py-2.5 text-xs font-bold shadow flex items-center gap-2"
+                >
+                  <Copy size={14} /> Copy Complete JSON to Clipboard
+                </button>
+              </div>
+
+              {/* Import Section */}
+              <div className="pt-4 border-t border-[#dfd7c9] space-y-3">
+                <span className="font-editorial text-base font-bold text-[#1f314d] block">
+                  Import / Restore Journal Data
+                </span>
+                <p className="text-xs text-[#6e6a62]">
+                  Select an exported JSON file or paste the JSON text below to update this device's journal data immediately:
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                  <label className="btn-secondary px-4 py-2 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 shrink-0">
+                    <FileUp size={14} /> Choose JSON Backup File
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            const content = event.target?.result as string;
+                            if (content) handleImportJson(content);
+                          };
+                          reader.readAsText(file);
+                        }
+                      }}
+                    />
+                  </label>
+                  <span className="text-xs text-[#8c887f]">or paste raw JSON below:</span>
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={importJsonText}
+                  onChange={(e) => setImportJsonText(e.target.value)}
+                  placeholder="Paste { &quot;settings&quot;: {...}, &quot;articles&quot;: [...], &quot;people&quot;: [...] } here..."
+                  className="w-full p-3 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs"
+                />
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleImportJson()}
+                    disabled={isImporting || !importJsonText.trim()}
+                    className="btn-primary px-4 py-2 text-xs font-bold shadow flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isImporting ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                    <span>Import and Apply to Website</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

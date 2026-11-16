@@ -11,6 +11,11 @@ import { initialJournalData } from "@shared/default-data";
 import { currentIssueArticles, setDynamicArticles } from "@/data/articles";
 import { useEffect, useMemo } from "react";
 import { savePdfToIndexedDB } from "@/lib/pdf-storage";
+import {
+  getCloudSyncConfig,
+  fetchFromCloudSyncUrl,
+  pushToCloudSyncUrl,
+} from "@/lib/cloud-sync";
 
 const LOCAL_STORAGE_KEY = "jpsg_journal_data_v2";
 
@@ -124,6 +129,14 @@ export function saveLocalJournalData(data: JournalData): void {
 
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(safeData));
     setDynamicArticles(cleaned.articles);
+
+    // Auto-sync to Cloud Sync URL if configured (ensures updates propagate to all other devices)
+    const syncConfig = getCloudSyncConfig();
+    if (syncConfig.cloudUrl && syncConfig.autoSyncToCloud !== false) {
+      pushToCloudSyncUrl(safeData).catch((syncErr) =>
+        console.warn("Background cloud sync error:", syncErr)
+      );
+    }
   } catch (err) {
     console.warn("Could not write journal data to localStorage:", err);
   }
@@ -303,6 +316,7 @@ export function useJournalData() {
   const query = useQuery<JournalData>({
     queryKey: ["journal-data"],
     queryFn: async () => {
+      // 1. Try local Express API (if server backend is active)
       try {
         const res = await fetch("/api/journal/data");
         const contentType = res.headers.get("content-type") || "";
@@ -315,8 +329,22 @@ export function useJournalData() {
           }
         }
       } catch {
-        // Fetch failed, use local storage
+        // Fetch failed, continue to cloud/local check
       }
+
+      // 2. Try configured Cloud Sync URL (Firebase, Supabase, or remote REST DB)
+      try {
+        const cloudData = await fetchFromCloudSyncUrl();
+        if (cloudData && Array.isArray(cloudData.articles) && cloudData.articles.length > 0) {
+          const cleaned = deduplicateJournalData(cloudData);
+          saveLocalJournalData(cleaned);
+          return cleaned;
+        }
+      } catch (cloudErr) {
+        console.warn("Could not fetch from cloud sync URL:", cloudErr);
+      }
+
+      // 3. Fallback to browser local storage or bundled defaults
       return getLocalJournalData();
     },
     staleTime: 5000,
