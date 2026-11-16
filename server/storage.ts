@@ -68,23 +68,43 @@ export class JsonStorage implements IStorage {
   private deduplicateData(data: JournalData): JournalData {
     if (!data) return data;
 
-    // Deduplicate articles by unique key
+    // Deduplicate articles by slug, ID, or title (not serial number)
     const seenArticleKeys = new Set<string>();
     const uniqueArticles: JournalArticle[] = [];
     for (const a of data.articles || []) {
       const slugKey = a.slug ? a.slug.toLowerCase().trim() : "";
-      const serialKey = a.serialNumber ? a.serialNumber.trim() : "";
       const titleKey = a.title ? a.title.toLowerCase().trim() : "";
       const idKey = a.id ? a.id.trim() : "";
 
-      const compositeKey = slugKey || serialKey || idKey || titleKey;
+      const compositeKey = slugKey || idKey || titleKey;
       if (!seenArticleKeys.has(compositeKey)) {
         seenArticleKeys.add(compositeKey);
         if (slugKey) seenArticleKeys.add(slugKey);
-        if (serialKey) seenArticleKeys.add(`s-${serialKey}`);
+        if (idKey) seenArticleKeys.add(idKey);
         uniqueArticles.push(a);
       }
     }
+
+    // Sort strictly by serial number ascending
+    uniqueArticles.sort((a, b) => {
+      const numA = parseInt(a.serialNumber || a.id || "0", 10);
+      const numB = parseInt(b.serialNumber || b.id || "0", 10);
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numA - numB;
+      }
+      return (a.serialNumber || "").localeCompare(b.serialNumber || "");
+    });
+
+    // Normalize serialization (ensure 2-digit format e.g. 01, 02, 03)
+    const serializedArticles = uniqueArticles.map((art, idx) => {
+      const num = parseInt(art.serialNumber || String(idx + 1), 10);
+      const cleanSerial = !isNaN(num) && num > 0 ? String(num).padStart(2, "0") : String(idx + 1).padStart(2, "0");
+      return {
+        ...art,
+        serialNumber: cleanSerial,
+        id: art.id || cleanSerial,
+      };
+    });
 
     // Deduplicate people by category + name
     const seenPeopleKeys = new Set<string>();
@@ -101,7 +121,7 @@ export class JsonStorage implements IStorage {
 
     return {
       settings: data.settings || initialJournalData.settings,
-      articles: uniqueArticles,
+      articles: serializedArticles,
       people: uniquePeople,
     };
   }

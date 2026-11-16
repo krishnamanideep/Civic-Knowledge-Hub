@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Download, ExternalLink, Quote, ChevronDown, ChevronUp, Copy, Check, BookOpen, ArrowRight } from "lucide-react";
 import { type JournalArticle, getCitation } from "@/data/articles";
+import { safeOpenPdf, safeDownloadPdf } from "@/lib/pdf-storage";
 
 export function ArticleCard({ article, defaultExpanded = false }: { article: JournalArticle; defaultExpanded?: boolean }) {
   const [showAbstract, setShowAbstract] = useState(defaultExpanded);
@@ -133,13 +134,19 @@ export function ArticleCard({ article, defaultExpanded = false }: { article: Jou
       {/* Actions footer */}
       <div className="mt-5 pt-4 border-t border-[#dfd7c9] flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <a
-            href={article.pdfUrl}
-            download={pdfFilename}
-            className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-xs font-bold shadow-xs"
+          <button
+            type="button"
+            onClick={() =>
+              safeDownloadPdf(
+                article.pdfUrl,
+                `JPSG_Article_${article.serialNumber}_${article.slug}.pdf`,
+                article.slug
+              )
+            }
+            className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-xs font-bold shadow-xs cursor-pointer"
           >
             <Download size={13} /> Download Full PDF
-          </a>
+          </button>
           <Link
             href={`/article/${article.slug}`}
             className="btn-secondary inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold"
@@ -147,15 +154,14 @@ export function ArticleCard({ article, defaultExpanded = false }: { article: Jou
             <span>Article Page</span>
             <ArrowRight size={12} />
           </Link>
-          <a
-            href={article.pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold"
+          <button
+            type="button"
+            onClick={() => safeOpenPdf(article.pdfUrl, article.title, article.slug)}
+            className="btn-secondary inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold cursor-pointer"
           >
             <span>View PDF</span>
             <ExternalLink size={12} />
-          </a>
+          </button>
         </div>
 
         <button

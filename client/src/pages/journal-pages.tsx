@@ -6,6 +6,7 @@ import { ManuscriptTemplatesSection } from "@/components/manuscript-templates";
 import { ArticleCard } from "@/components/article-card";
 import { subjectAreas } from "./home";
 import { useArticles, usePeople, useJournalSettings } from "@/hooks/use-journal";
+import { safeOpenPdf, safeDownloadPdf } from "@/lib/pdf-storage";
 
 export type JournalPageType =
   | "about"
@@ -875,23 +876,28 @@ function ArchivesPage() {
                       <span>Article</span>
                       <ArrowRight size={12} />
                     </Link>
-                    <a
-                      href={art.pdfUrl}
-                      download={art.pdfUrl.split("/").pop() || "article.pdf"}
-                      className="btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs"
+                    <button
+                      type="button"
+                      onClick={() =>
+                        safeDownloadPdf(
+                          art.pdfUrl,
+                          `JPSG_Article_${art.serialNumber}_${art.slug}.pdf`,
+                          art.slug
+                        )
+                      }
+                      className="btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs cursor-pointer"
                     >
                       <Download size={13} />
                       <span>PDF</span>
-                    </a>
-                    <a
-                      href={art.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-secondary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold"
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => safeOpenPdf(art.pdfUrl, art.title, art.slug)}
+                      className="btn-secondary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold cursor-pointer"
                     >
                       <span>View</span>
                       <ExternalLink size={11} />
-                    </a>
+                    </button>
                   </div>
                 </div>
               ))}

@@ -10,10 +10,11 @@ import {
 import { initialJournalData } from "@shared/default-data";
 import { currentIssueArticles, setDynamicArticles } from "@/data/articles";
 import { useEffect, useMemo } from "react";
+import { savePdfToIndexedDB } from "@/lib/pdf-storage";
 
-const LOCAL_STORAGE_KEY = "jpsg_journal_data";
+const LOCAL_STORAGE_KEY = "jpsg_journal_data_v2";
 
-// Utility to deduplicate articles and people strictly
+// Utility to deduplicate articles and people strictly and enforce sequential serialization
 export function deduplicateJournalData(data: JournalData): JournalData {
   if (!data) return data;
 
@@ -21,18 +22,39 @@ export function deduplicateJournalData(data: JournalData): JournalData {
   const uniqueArticles: JournalArticle[] = [];
   for (const a of data.articles || []) {
     const slugKey = a.slug ? a.slug.toLowerCase().trim() : "";
-    const serialKey = a.serialNumber ? a.serialNumber.trim() : "";
     const titleKey = a.title ? a.title.toLowerCase().trim() : "";
     const idKey = a.id ? a.id.trim() : "";
 
-    const primaryKey = slugKey || serialKey || idKey || titleKey;
+    // Deduplicate strictly by slug, id, or exact title (never drop an article solely on serial number)
+    const primaryKey = slugKey || idKey || titleKey;
     if (!seenArticleKeys.has(primaryKey)) {
       seenArticleKeys.add(primaryKey);
       if (slugKey) seenArticleKeys.add(slugKey);
-      if (serialKey) seenArticleKeys.add(`s-${serialKey}`);
+      if (idKey) seenArticleKeys.add(idKey);
       uniqueArticles.push(a);
     }
   }
+
+  // Sort strictly by serial number ascending
+  uniqueArticles.sort((a, b) => {
+    const numA = parseInt(a.serialNumber || a.id || "0", 10);
+    const numB = parseInt(b.serialNumber || b.id || "0", 10);
+    if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+      return numA - numB;
+    }
+    return (a.serialNumber || "").localeCompare(b.serialNumber || "");
+  });
+
+  // Re-number and normalize serialization so every article has a clean 2-digit sequential serial
+  const serializedArticles = uniqueArticles.map((art, idx) => {
+    const num = parseInt(art.serialNumber || String(idx + 1), 10);
+    const cleanSerial = !isNaN(num) && num > 0 ? String(num).padStart(2, "0") : String(idx + 1).padStart(2, "0");
+    return {
+      ...art,
+      serialNumber: cleanSerial,
+      id: art.id || cleanSerial,
+    };
+  });
 
   const seenPeopleKeys = new Set<string>();
   const uniquePeople: JournalPerson[] = [];
@@ -48,7 +70,7 @@ export function deduplicateJournalData(data: JournalData): JournalData {
 
   return {
     settings: data.settings || initialJournalData.settings,
-    articles: uniqueArticles,
+    articles: serializedArticles,
     people: uniquePeople,
   };
 }
@@ -59,7 +81,7 @@ export function getLocalJournalData(): JournalData {
     return initialJournalData;
   }
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem("jpsg_journal_data");
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.articles) && Array.isArray(parsed.people) && parsed.settings) {
@@ -75,12 +97,32 @@ export function getLocalJournalData(): JournalData {
   return initialJournalData;
 }
 
-// Helper to save local data safely with deduplication
+// Helper to save local data safely with deduplication and IndexedDB offloading
 export function saveLocalJournalData(data: JournalData): void {
   if (typeof window === "undefined") return;
   try {
     const cleaned = deduplicateJournalData(data);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleaned));
+
+    // Offload heavy base64 data URLs to IndexedDB to prevent localStorage QuotaExceededError
+    const safeArticles = cleaned.articles.map((art) => {
+      if (art.pdfUrl && art.pdfUrl.startsWith("data:")) {
+        savePdfToIndexedDB(art.slug || art.id, art.pdfUrl).catch((err) =>
+          console.warn("IndexedDB background save error:", err)
+        );
+        return {
+          ...art,
+          pdfUrl: `idb://pdf/${art.slug || art.id}`,
+        };
+      }
+      return art;
+    });
+
+    const safeData: JournalData = {
+      ...cleaned,
+      articles: safeArticles,
+    };
+
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(safeData));
     setDynamicArticles(cleaned.articles);
   } catch (err) {
     console.warn("Could not write journal data to localStorage:", err);
@@ -97,7 +139,7 @@ function localCreateArticle(article: InsertArticle): JournalArticle {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "");
 
-  // Check if article already exists by slug or title (do not match solely on default serialNumber)
+  // Check if article already exists by slug or title
   const existingIdx = current.articles.findIndex(
     (a) =>
       (article.slug && a.slug.toLowerCase() === article.slug.toLowerCase()) ||
@@ -110,9 +152,19 @@ function localCreateArticle(article: InsertArticle): JournalArticle {
     return !isNaN(num) && num > max ? num : max;
   }, 0);
   const nextNum = (maxSerial + 1).toString().padStart(2, "0");
-  const serialAlreadyTaken = article.serialNumber && current.articles.some((a) => a.serialNumber === article.serialNumber);
-  const serialNumber = existingIdx !== -1 ? current.articles[existingIdx].serialNumber : ((!article.serialNumber || serialAlreadyTaken) ? nextNum : article.serialNumber);
+  const parsedProvided = article.serialNumber ? parseInt(article.serialNumber, 10) : NaN;
+  const cleanProvided = !isNaN(parsedProvided) && parsedProvided > 0 ? String(parsedProvided).padStart(2, "0") : "";
+  const serialAlreadyTaken = cleanProvided && current.articles.some((a) => a.serialNumber === cleanProvided);
+  
+  const serialNumber = existingIdx !== -1
+    ? current.articles[existingIdx].serialNumber
+    : ((!cleanProvided || serialAlreadyTaken) ? nextNum : cleanProvided);
   const id = existingIdx !== -1 ? current.articles[existingIdx].id : serialNumber;
+
+  // If pdfUrl is a data URL, save to IndexedDB immediately
+  if (article.pdfUrl && article.pdfUrl.startsWith("data:")) {
+    savePdfToIndexedDB(slug || id, article.pdfUrl).catch(console.warn);
+  }
 
   const newArticle: JournalArticle = {
     ...article,
@@ -285,17 +337,28 @@ export function useArticles(): { articles: JournalArticle[]; isLoading: boolean 
   const rawArticles =
     data?.articles && data.articles.length > 0 ? data.articles : currentIssueArticles;
 
-  // Guarantee strict deduplication in UI
+  // Guarantee strict deduplication and sequential serialization in UI
   const articles = useMemo(() => {
     const seen = new Set<string>();
     const result: JournalArticle[] = [];
     for (const art of rawArticles) {
-      const key = (art.slug || art.id || art.serialNumber || art.title).toLowerCase().trim();
+      const key = (art.slug || art.id || art.title).toLowerCase().trim();
       if (!seen.has(key)) {
         seen.add(key);
         result.push(art);
       }
     }
+
+    // Sort strictly by numeric serial number ascending (Article 01, 02, 03, 04, 05, 06...)
+    result.sort((a, b) => {
+      const numA = parseInt(a.serialNumber || a.id || "0", 10);
+      const numB = parseInt(b.serialNumber || b.id || "0", 10);
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numA - numB;
+      }
+      return (a.serialNumber || "").localeCompare(b.serialNumber || "");
+    });
+
     return result;
   }, [rawArticles]);
 
@@ -359,6 +422,44 @@ export function useJournalSettings(): { settings: JournalSettings | undefined; i
 
 // ==================== ADMIN MUTATION HOOKS ====================
 
+// Resilient API helper that supports both full Express server and static hosting (e.g. Vercel SPA)
+async function resilientApiCall<T>(
+  url: string,
+  options: RequestInit,
+  fallback: () => T | Promise<T>
+): Promise<T> {
+  try {
+    const res = await fetch(url, options);
+    const contentType = res.headers.get("content-type") || "";
+
+    // Only parse as JSON if the server genuinely returned JSON
+    if (contentType.includes("application/json")) {
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        let errMsg = errData.message || `Server error (${res.status})`;
+        if (errData.errors) {
+          errMsg += ": " + Object.entries(errData.errors).map(([k, v]) => `${k}: ${v}`).join(", ");
+        }
+        throw new Error(errMsg);
+      }
+      return (await res.json()) as T;
+    }
+  } catch (err: any) {
+    if (
+      err.message &&
+      !err.message.includes("fetch") &&
+      !err.message.includes("Failed to fetch") &&
+      !err.message.includes("is not valid JSON") &&
+      !err.message.includes("Unexpected token")
+    ) {
+      throw err;
+    }
+  }
+
+  // Fallback to local storage (Vercel static host, offline, or rewrite)
+  return await fallback();
+}
+
 export function useAdminMutations() {
   const queryClient = useQueryClient();
 
@@ -374,28 +475,15 @@ export function useAdminMutations() {
 
   const createArticle = useMutation({
     mutationFn: async (article: InsertArticle) => {
-      let created: JournalArticle;
-      try {
-        const res = await fetch("/api/articles", {
+      const created = await resilientApiCall<JournalArticle>(
+        "/api/articles",
+        {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(article),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          let errMsg = errData.message || `Server error (${res.status}) saving article`;
-          if (errData.errors) {
-            errMsg += ": " + Object.entries(errData.errors).map(([k, v]) => `${k}: ${v}`).join(", ");
-          }
-          throw new Error(errMsg);
-        }
-        created = (await res.json()) as JournalArticle;
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        created = localCreateArticle(article);
-      }
+        },
+        () => localCreateArticle(article)
+      );
 
       // Synchronously update local state & query cache
       const current = getLocalJournalData();
@@ -415,24 +503,15 @@ export function useAdminMutations() {
 
   const updateArticle = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<InsertArticle> }) => {
-      let updated: JournalArticle;
-      try {
-        const res = await fetch(`/api/articles/${id}`, {
+      const updated = await resilientApiCall<JournalArticle>(
+        `/api/articles/${id}`,
+        {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updates),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `Server error (${res.status}) updating article`);
-        }
-        updated = (await res.json()) as JournalArticle;
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        updated = localUpdateArticle(id, updates);
-      }
+        },
+        () => localUpdateArticle(id, updates)
+      );
 
       const current = getLocalJournalData();
       const idx = current.articles.findIndex((a) => a.id === id || a.slug === id);
@@ -447,20 +526,11 @@ export function useAdminMutations() {
 
   const deleteArticle = useMutation({
     mutationFn: async (id: string) => {
-      try {
-        const res = await fetch(`/api/articles/${id}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `Server error (${res.status}) deleting article`);
-        }
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        localDeleteArticle(id);
-      }
+      await resilientApiCall<boolean>(
+        `/api/articles/${id}`,
+        { method: "DELETE" },
+        () => localDeleteArticle(id)
+      );
 
       const current = getLocalJournalData();
       current.articles = current.articles.filter((a) => a.id !== id && a.slug !== id);
@@ -472,28 +542,15 @@ export function useAdminMutations() {
 
   const createPerson = useMutation({
     mutationFn: async (person: InsertPerson) => {
-      let created: JournalPerson;
-      try {
-        const res = await fetch("/api/people", {
+      const created = await resilientApiCall<JournalPerson>(
+        "/api/people",
+        {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(person),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          let errMsg = errData.message || `Server error (${res.status}) saving person`;
-          if (errData.errors) {
-            errMsg += ": " + Object.entries(errData.errors).map(([k, v]) => `${k}: ${v}`).join(", ");
-          }
-          throw new Error(errMsg);
-        }
-        created = (await res.json()) as JournalPerson;
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        created = localCreatePerson(person);
-      }
+        },
+        () => localCreatePerson(person)
+      );
 
       const current = getLocalJournalData();
       const existingIdx = current.people.findIndex(
@@ -514,24 +571,15 @@ export function useAdminMutations() {
 
   const updatePerson = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<InsertPerson> }) => {
-      let updated: JournalPerson;
-      try {
-        const res = await fetch(`/api/people/${id}`, {
+      const updated = await resilientApiCall<JournalPerson>(
+        `/api/people/${id}`,
+        {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updates),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `Server error (${res.status}) updating person`);
-        }
-        updated = (await res.json()) as JournalPerson;
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        updated = localUpdatePerson(id, updates);
-      }
+        },
+        () => localUpdatePerson(id, updates)
+      );
 
       const current = getLocalJournalData();
       const idx = current.people.findIndex((p) => p.id === id);
@@ -546,20 +594,11 @@ export function useAdminMutations() {
 
   const deletePerson = useMutation({
     mutationFn: async (id: string) => {
-      try {
-        const res = await fetch(`/api/people/${id}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `Server error (${res.status}) deleting person`);
-        }
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        localDeletePerson(id);
-      }
+      await resilientApiCall<boolean>(
+        `/api/people/${id}`,
+        { method: "DELETE" },
+        () => localDeletePerson(id)
+      );
 
       const current = getLocalJournalData();
       current.people = current.people.filter((p) => p.id !== id);
@@ -571,24 +610,15 @@ export function useAdminMutations() {
 
   const reorderPeople = useMutation({
     mutationFn: async (orderedIds: string[]) => {
-      let updated: JournalPerson[];
-      try {
-        const res = await fetch("/api/people/reorder", {
+      const updated = await resilientApiCall<JournalPerson[]>(
+        "/api/people/reorder",
+        {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderedIds }),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `Server error (${res.status}) reordering people`);
-        }
-        updated = await res.json();
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        updated = localReorderPeople(orderedIds);
-      }
+        },
+        () => localReorderPeople(orderedIds)
+      );
 
       const current = getLocalJournalData();
       current.people = updated;
@@ -600,24 +630,15 @@ export function useAdminMutations() {
 
   const updateSettings = useMutation({
     mutationFn: async (settings: Partial<JournalSettings>) => {
-      let updated: JournalSettings;
-      try {
-        const res = await fetch("/api/settings", {
+      const updated = await resilientApiCall<JournalSettings>(
+        "/api/settings",
+        {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(settings),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `Server error (${res.status}) updating settings`);
-        }
-        updated = await res.json();
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        updated = localUpdateSettings(settings);
-      }
+        },
+        () => localUpdateSettings(settings)
+      );
 
       const current = getLocalJournalData();
       current.settings = updated;
@@ -629,21 +650,11 @@ export function useAdminMutations() {
 
   const resetData = useMutation({
     mutationFn: async () => {
-      let reset: JournalData;
-      try {
-        const res = await fetch("/api/journal/reset", {
-          method: "POST",
-        });
-        if (!res.ok) {
-          throw new Error("Failed to reset journal data");
-        }
-        reset = await res.json().then((d) => d.data || d);
-      } catch (err: any) {
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed to fetch")) {
-          throw err;
-        }
-        reset = localResetData();
-      }
+      const reset = await resilientApiCall<JournalData>(
+        "/api/journal/reset",
+        { method: "POST" },
+        () => localResetData()
+      );
 
       syncCache(reset);
       return reset;

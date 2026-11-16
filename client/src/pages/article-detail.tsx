@@ -22,6 +22,7 @@ import {
   type JournalArticle,
 } from "@/data/articles";
 import { useArticle, useArticles, useJournalSettings } from "@/hooks/use-journal";
+import { safeOpenPdf, safeDownloadPdf } from "@/lib/pdf-storage";
 
 export default function ArticleDetailPage({ slug: propSlug }: { slug?: string }) {
   const params = useParams<{ slug: string }>();
@@ -253,22 +254,27 @@ export default function ArticleDetailPage({ slug: propSlug }: { slug?: string })
             <div className="space-y-6">
               {/* PDF Download Card */}
               <SideCard title="Download Options">
-                <a
-                  href={article.pdfUrl}
-                  download={pdfFilename}
-                  className="btn-primary w-full inline-flex items-center justify-center gap-2 py-2.5 text-xs font-bold shadow-xs mb-2"
+                <button
+                  type="button"
+                  onClick={() =>
+                    safeDownloadPdf(
+                      article.pdfUrl,
+                      `JPSG_Article_${article.serialNumber}_${article.slug}.pdf`,
+                      article.slug
+                    )
+                  }
+                  className="btn-primary w-full inline-flex items-center justify-center gap-2 py-2.5 text-xs font-bold shadow-xs mb-2 cursor-pointer"
                 >
                   <Download size={14} /> Download PDF
-                </a>
-                <a
-                  href={article.pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary w-full inline-flex items-center justify-center gap-2 py-2 text-xs font-semibold"
+                </button>
+                <button
+                  type="button"
+                  onClick={() => safeOpenPdf(article.pdfUrl, article.title, article.slug)}
+                  className="btn-secondary w-full inline-flex items-center justify-center gap-2 py-2 text-xs font-semibold cursor-pointer"
                 >
                   <span>Read Full PDF Online</span>
                   <ExternalLink size={13} />
-                </a>
+                </button>
                 <p className="mt-3 text-[0.7rem] text-[#77736d] leading-4 text-center">
                   Official publisher typeset PDF for Volume 1, Issue 1.
                 </p>

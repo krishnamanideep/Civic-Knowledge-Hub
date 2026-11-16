@@ -15,6 +15,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useArticles, usePeople, useJournalSettings } from "@/hooks/use-journal";
+import { safeOpenPdf, safeDownloadPdf } from "@/lib/pdf-storage";
 
 export const subjectAreas = [
   "Political Science and Public Administration",
@@ -237,23 +238,28 @@ export default function Home() {
                       <span>Article</span>
                       <ArrowRight size={12} />
                     </Link>
-                    <a
-                      href={art.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#213858] bg-[#ebe6db] hover:bg-[#213858] hover:text-[#f6f3eb] rounded-xs border border-[#cfc6b5] transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => safeOpenPdf(art.pdfUrl, art.title, art.slug)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#213858] bg-[#ebe6db] hover:bg-[#213858] hover:text-[#f6f3eb] rounded-xs border border-[#cfc6b5] transition-colors cursor-pointer"
                       title="Read PDF in browser"
                     >
                       <ExternalLink size={13} /> View
-                    </a>
-                    <a
-                      href={art.pdfUrl}
-                      download={art.pdfUrl.split("/").pop() || "article.pdf"}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#a45a40] hover:bg-[#8e4932] rounded-xs shadow-xs transition-colors"
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        safeDownloadPdf(
+                          art.pdfUrl,
+                          `JPSG_Article_${art.serialNumber}_${art.slug}.pdf`,
+                          art.slug
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#a45a40] hover:bg-[#8e4932] rounded-xs shadow-xs transition-colors cursor-pointer"
                       title="Download full PDF"
                     >
                       <Download size={13} /> PDF
-                    </a>
+                    </button>
                   </div>
                 </div>
               </div>

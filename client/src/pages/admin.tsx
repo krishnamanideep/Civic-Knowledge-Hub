@@ -43,6 +43,7 @@ import {
   type JournalSettings as JournalSettingsType,
 } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { savePdfToIndexedDB, resolvePdfUrl, safeOpenPdf, safeDownloadPdf } from "@/lib/pdf-storage";
 
 type TabType = "dashboard" | "articles" | "people" | "settings" | "uploads";
 
@@ -158,13 +159,19 @@ export default function AdminPage() {
   };
 
   // PDF Preview Modal State & Safe PDF Opener
-  const [previewPdfModal, setPreviewPdfModal] = useState<{ isOpen: boolean; url: string; title: string }>({
+  const [previewPdfModal, setPreviewPdfModal] = useState<{
+    isOpen: boolean;
+    url: string;
+    resolvedUrl: string;
+    title: string;
+  }>({
     isOpen: false,
     url: "",
+    resolvedUrl: "",
     title: "",
   });
 
-  const safeOpenPdf = (url: string, title?: string) => {
+  const openPdfPreview = async (url: string, title?: string) => {
     if (!url) {
       toast({
         title: "No PDF",
@@ -173,46 +180,34 @@ export default function AdminPage() {
       });
       return;
     }
-
-    // If it's a data URL, convert base64 to Blob URL so the browser won't block top frame navigation
-    if (url.startsWith("data:")) {
-      try {
-        const parts = url.split(",");
-        const mimeMatch = parts[0].match(/:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : "application/pdf";
-        const byteString = atob(parts[1]);
-        const arrayBuffer = new ArrayBuffer(byteString.length);
-        const uint8Array = new Uint8Array(arrayBuffer);
-        for (let i = 0; i < byteString.length; i++) {
-          uint8Array[i] = byteString.charCodeAt(i);
-        }
-        const blob = new Blob([uint8Array], { type: mime });
-        const blobUrl = URL.createObjectURL(blob);
-        const win = window.open(blobUrl, "_blank");
-        if (!win) {
-          const a = document.createElement("a");
-          a.href = blobUrl;
-          a.download = `${(title || "article").replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
-          a.click();
-        }
-        return;
-      } catch (err) {
-        console.error("Failed to parse data URL:", err);
-      }
-    }
-
-    // Standard URL
-    window.open(url, "_blank", "noopener,noreferrer");
+    const resolved = await resolvePdfUrl(url);
+    setPreviewPdfModal({
+      isOpen: true,
+      url,
+      resolvedUrl: resolved,
+      title: title || "Manuscript PDF",
+    });
   };
 
-  // Upload PDF Handler
+  // Upload PDF Handler with IndexedDB Persistence
   const handleFileUpload = async (file: File) => {
     if (!file) return;
-    const formData = new FormData();
-    formData.append("file", file);
-
     setUploadingPdf(true);
+
     try {
+      // 1. Always store locally in IndexedDB first so it is available 100% reliably
+      const key = `${articleForm.slug || "manuscript"}-${Date.now()}`;
+      const idbRef = await savePdfToIndexedDB(key, file);
+
+      setArticleForm((prev) => ({ ...prev, pdfUrl: idbRef }));
+      toast({
+        title: "PDF Saved into Journal System",
+        description: `${file.name} (${Math.round(file.size / 1024)} KB) is loaded and ready!`,
+      });
+
+      // 2. Also attempt upload to Express server if backend is active
+      const formData = new FormData();
+      formData.append("file", file);
       const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
@@ -221,35 +216,12 @@ export default function AdminPage() {
       const contentType = res.headers.get("content-type") || "";
       if (res.ok && contentType.includes("application/json")) {
         const data = await res.json();
-        setArticleForm((prev) => ({ ...prev, pdfUrl: data.url }));
-        toast({
-          title: "PDF Uploaded Successfully",
-          description: `Stored at ${data.url}`,
-        });
-        return;
+        if (data.url) {
+          setArticleForm((prev) => ({ ...prev, pdfUrl: data.url }));
+        }
       }
-      throw new Error("Server upload endpoint not responding with JSON");
-    } catch {
-      // Graceful fallback for static hosting / offline
-      if (file.size < 4 * 1024 * 1024) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          setArticleForm((prev) => ({ ...prev, pdfUrl: dataUrl }));
-          toast({
-            title: "PDF Loaded (Browser Storage)",
-            description: `${file.name} saved directly to browser storage.`,
-          });
-        };
-        reader.readAsDataURL(file);
-      } else {
-        const suggestedUrl = `/articles/${file.name.replace(/\s+/g, "_")}`;
-        setArticleForm((prev) => ({ ...prev, pdfUrl: suggestedUrl }));
-        toast({
-          title: "PDF Path Set",
-          description: `Configured path as ${suggestedUrl}. Place the file in public/articles/.`,
-        });
-      }
+    } catch (err: any) {
+      console.warn("Server upload not reachable (static hosting), safely stored in IndexedDB:", err);
     } finally {
       setUploadingPdf(false);
     }
@@ -965,13 +937,7 @@ export default function AdminPage() {
                               <div className="flex flex-col gap-1 items-start">
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    setPreviewPdfModal({
-                                      isOpen: true,
-                                      url: art.pdfUrl,
-                                      title: art.title,
-                                    })
-                                  }
+                                  onClick={() => openPdfPreview(art.pdfUrl, art.title)}
                                   className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 hover:bg-red-100 text-[#a45a40] border border-red-200 rounded text-xs font-semibold shadow-2xs transition-colors"
                                   title="View full-text PDF in interactive reader"
                                 >
@@ -1006,13 +972,7 @@ export default function AdminPage() {
                             {art.pdfUrl && (
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setPreviewPdfModal({
-                                    isOpen: true,
-                                    url: art.pdfUrl,
-                                    title: art.title,
-                                  })
-                                }
+                                onClick={() => openPdfPreview(art.pdfUrl, art.title)}
                                 className="inline-flex items-center justify-center p-1.5 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200"
                                 title="View / Read PDF"
                               >
@@ -1600,11 +1560,7 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setPreviewPdfModal({
-                        isOpen: true,
-                        url: articleForm.pdfUrl,
-                        title: articleForm.title || "Uploaded Manuscript PDF",
-                      })
+                      openPdfPreview(articleForm.pdfUrl, articleForm.title || "Uploaded Manuscript PDF")
                     }
                     className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#a45a40] border border-red-200 rounded text-xs font-bold inline-flex items-center gap-1 shadow-2xs"
                   >
@@ -1786,11 +1742,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        setPreviewPdfModal({
-                          isOpen: true,
-                          url: articleForm.pdfUrl,
-                          title: articleForm.title || "Article Manuscript PDF",
-                        })
+                        openPdfPreview(articleForm.pdfUrl, articleForm.title || "Article Manuscript PDF")
                       }
                       className="text-xs font-bold text-[#a45a40] hover:underline inline-flex items-center gap-1"
                     >
@@ -1823,11 +1775,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        setPreviewPdfModal({
-                          isOpen: true,
-                          url: articleForm.pdfUrl,
-                          title: articleForm.title || "Article Manuscript PDF",
-                        })
+                        openPdfPreview(articleForm.pdfUrl, articleForm.title || "Article Manuscript PDF")
                       }
                       className="px-3 py-2 bg-red-50 hover:bg-red-100 text-[#a45a40] border border-red-200 rounded text-xs font-bold shrink-0 inline-flex items-center gap-1 shadow-2xs"
                       title="Test view PDF"
@@ -2211,14 +2159,18 @@ export default function AdminPage() {
                 </div>
                 <p className="text-[0.7rem] text-[#6e6a62] truncate mt-0.5 font-mono">
                   {previewPdfModal.url.startsWith("data:")
-                    ? "Embedded PDF Stream (Base64)"
+                    ? "Embedded PDF Manuscript"
+                    : previewPdfModal.url.startsWith("idb://")
+                    ? "Local Journal Vault Document"
                     : previewPdfModal.url}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={() => safeOpenPdf(previewPdfModal.url, previewPdfModal.title)}
+                  onClick={() =>
+                    safeOpenPdf(previewPdfModal.resolvedUrl || previewPdfModal.url, previewPdfModal.title)
+                  }
                   className="px-3 py-1.5 bg-white hover:bg-[#e8e2d2] border border-[#cfc7b9] text-[#1f314d] rounded text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
                   title="Open in new browser tab"
                 >
@@ -2227,12 +2179,12 @@ export default function AdminPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    const a = document.createElement("a");
-                    a.href = previewPdfModal.url;
-                    a.download = `${(previewPdfModal.title || "article").replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
-                    a.click();
-                  }}
+                  onClick={() =>
+                    safeDownloadPdf(
+                      previewPdfModal.resolvedUrl || previewPdfModal.url,
+                      `${(previewPdfModal.title || "article").replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`
+                    )
+                  }
                   className="px-3 py-1.5 bg-[#1f314d] hover:bg-[#2c456b] text-white rounded text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
                   title="Download PDF"
                 >
@@ -2241,7 +2193,9 @@ export default function AdminPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPreviewPdfModal({ isOpen: false, url: "", title: "" })}
+                  onClick={() =>
+                    setPreviewPdfModal({ isOpen: false, url: "", resolvedUrl: "", title: "" })
+                  }
                   className="p-1.5 rounded hover:bg-black/10 text-2xl leading-none text-[#555] ml-1"
                   aria-label="Close"
                 >
@@ -2252,9 +2206,9 @@ export default function AdminPage() {
 
             {/* Modal Body / Embedded PDF View */}
             <div className="flex-1 bg-[#2e2e2e] relative flex items-center justify-center overflow-hidden">
-              {previewPdfModal.url ? (
+              {(previewPdfModal.resolvedUrl || previewPdfModal.url) ? (
                 <iframe
-                  src={previewPdfModal.url}
+                  src={previewPdfModal.resolvedUrl || previewPdfModal.url}
                   title={previewPdfModal.title || "PDF Preview"}
                   className="w-full h-full border-0 bg-white"
                 />
