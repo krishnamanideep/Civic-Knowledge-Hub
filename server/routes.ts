@@ -5,32 +5,41 @@ import {
   insertArticleSchema,
   insertPersonSchema,
   journalSettingsSchema,
-} from "@shared/schema";
+} from "../shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Configure Multer storage for PDF uploads
+// Configure Multer storage for PDF uploads (with serverless fallback)
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 const articlesDir = path.resolve(process.cwd(), "client", "public", "articles");
-if (!fs.existsSync(articlesDir)) {
-  fs.mkdirSync(articlesDir, { recursive: true });
-}
 
-const multerStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, articlesDir);
-  },
-  filename: (_req, file, cb) => {
-    // Generate clean sanitized filename with timestamp
-    const ext = path.extname(file.originalname).toLowerCase() || ".pdf";
-    const base = path
-      .basename(file.originalname, ext)
-      .replace(/[^a-zA-Z0-9_-]/g, "_")
-      .replace(/_+/g, "_");
-    const uniqueName = `${base}_${Date.now()}${ext}`;
-    cb(null, uniqueName);
-  },
-});
+let multerStorage: multer.StorageEngine;
+if (isServerless) {
+  multerStorage = multer.memoryStorage();
+} else {
+  try {
+    if (!fs.existsSync(articlesDir)) {
+      fs.mkdirSync(articlesDir, { recursive: true });
+    }
+    multerStorage = multer.diskStorage({
+      destination: (_req, _file, cb) => {
+        cb(null, articlesDir);
+      },
+      filename: (_req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase() || ".pdf";
+        const base = path
+          .basename(file.originalname, ext)
+          .replace(/[^a-zA-Z0-9_-]/g, "_")
+          .replace(/_+/g, "_");
+        const uniqueName = `${base}_${Date.now()}${ext}`;
+        cb(null, uniqueName);
+      },
+    });
+  } catch (err) {
+    multerStorage = multer.memoryStorage();
+  }
+}
 
 const upload = multer({
   storage: multerStorage,
@@ -267,6 +276,22 @@ export async function registerRoutes(
   app.post("/api/upload", upload.single("file"), (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ message: "No file was uploaded" });
+    }
+
+    // In serverless / memoryStorage:
+    if (req.file.buffer) {
+      const mime = req.file.mimetype || "application/pdf";
+      const b64 = req.file.buffer.toString("base64");
+      const dataUrl = `data:${mime};base64,${b64}`;
+      const sanitizedName = req.file.originalname.replace(/[^a-zA-Z0-9_.-]/g, "_");
+
+      return res.json({
+        success: true,
+        url: dataUrl,
+        filename: sanitizedName,
+        originalName: req.file.originalname,
+        size: req.file.size,
+      });
     }
 
     const publicUrl = `/articles/${req.file.filename}`;

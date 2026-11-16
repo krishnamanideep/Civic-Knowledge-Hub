@@ -3,6 +3,18 @@
   "outputDirectory": "dist/public",
   "rewrites": [
     {
+      "source": "/dock(.*)",
+      "destination": "https://docknowledge.org"
+    },
+    {
+      "source": "/docknowledge(.*)",
+      "destination": "https://docknowledge.org"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -7,7 +7,7 @@ import {
   type InsertPerson,
   type JournalSettings,
   type JournalData,
-} from "@shared/schema";
+} from "../shared/schema";
 import { initialJournalData } from "./default-data";
 import fs from "fs";
 import path from "path";
@@ -52,16 +52,23 @@ export class JsonStorage implements IStorage {
       password: "admin",
     });
 
-    const dataDir = path.resolve(process.cwd(), "server", "data");
-    if (!fs.existsSync(dataDir)) {
-      try {
-        fs.mkdirSync(dataDir, { recursive: true });
-      } catch (err) {
-        console.error("Failed to create data directory:", err);
-      }
+    const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+    let chosenDir = path.resolve(process.cwd(), "server", "data");
+
+    if (isServerless) {
+      chosenDir = path.resolve("/tmp", "server-data");
     }
 
-    this.dataFilePath = path.join(dataDir, "journal-data.json");
+    try {
+      if (!fs.existsSync(chosenDir)) {
+        fs.mkdirSync(chosenDir, { recursive: true });
+      }
+    } catch (err) {
+      // In serverless / read-only filesystem, use /tmp
+      chosenDir = "/tmp";
+    }
+
+    this.dataFilePath = path.join(chosenDir, "journal-data.json");
     this.data = this.loadData();
   }
 
@@ -127,9 +134,25 @@ export class JsonStorage implements IStorage {
   }
 
   private loadData(): JournalData {
+    // 1. Check active data file path (/tmp or server/data)
     try {
       if (fs.existsSync(this.dataFilePath)) {
         const raw = fs.readFileSync(this.dataFilePath, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (parsed.settings && parsed.articles && parsed.people) {
+          const cleaned = this.deduplicateData(parsed as JournalData);
+          return cleaned;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not read from dataFilePath, trying fallbacks:", err);
+    }
+
+    // 2. Check bundled server/data/journal-data.json
+    try {
+      const bundledPath = path.resolve(process.cwd(), "server", "data", "journal-data.json");
+      if (fs.existsSync(bundledPath)) {
+        const raw = fs.readFileSync(bundledPath, "utf-8");
         const parsed = JSON.parse(raw);
         if (parsed.settings && parsed.articles && parsed.people) {
           const cleaned = this.deduplicateData(parsed as JournalData);
@@ -138,10 +161,10 @@ export class JsonStorage implements IStorage {
         }
       }
     } catch (err) {
-      console.warn("Could not read journal data from disk, using defaults:", err);
+      console.warn("Could not read bundled journal-data.json:", err);
     }
 
-    // Default initialization
+    // 3. Default initialization
     const cloned = JSON.parse(JSON.stringify(initialJournalData));
     const cleaned = this.deduplicateData(cloned);
     this.saveData(cleaned);
@@ -152,7 +175,15 @@ export class JsonStorage implements IStorage {
     try {
       const cleaned = this.deduplicateData(dataToSave);
       this.data = cleaned;
-      fs.writeFileSync(this.dataFilePath, JSON.stringify(cleaned, null, 2), "utf-8");
+
+      try {
+        fs.writeFileSync(this.dataFilePath, JSON.stringify(cleaned, null, 2), "utf-8");
+      } catch (err) {
+        // Fallback to /tmp if primary path is read-only
+        const fallbackPath = path.join("/tmp", "journal-data.json");
+        fs.writeFileSync(fallbackPath, JSON.stringify(cleaned, null, 2), "utf-8");
+        this.dataFilePath = fallbackPath;
+      }
     } catch (err) {
       console.error("Error writing journal data to disk:", err);
     }
