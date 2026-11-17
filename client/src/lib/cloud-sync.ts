@@ -9,20 +9,27 @@ export interface CloudSyncConfig {
   autoSyncToCloud?: boolean;
 }
 
-const SYNC_CONFIG_KEY = "jpsg_cloud_sync_config";
+export const DEFAULT_FIREBASE_URL =
+  "https://jspg-6a797-default-rtdb.asia-southeast1.firebasedatabase.app/journal.json";
+
+const SYNC_CONFIG_KEY = "jpsg_cloud_sync_config_v2";
 
 export function getCloudSyncConfig(): CloudSyncConfig {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(SYNC_CONFIG_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (err) {
-    console.warn("Could not parse cloud sync config:", err);
+  let stored: Partial<CloudSyncConfig> = {};
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(SYNC_CONFIG_KEY) || localStorage.getItem("jpsg_cloud_sync_config");
+      if (raw) stored = JSON.parse(raw);
+    } catch (err) {
+      console.warn("Could not parse cloud sync config:", err);
+    }
   }
   return {
-    githubRepo: "krishnamanideep/Civic-Knowledge-Hub",
-    githubBranch: "main",
+    cloudUrl: stored.cloudUrl || DEFAULT_FIREBASE_URL,
+    githubRepo: stored.githubRepo || "krishnamanideep/Civic-Knowledge-Hub",
+    githubBranch: stored.githubBranch || "main",
     autoSyncToCloud: true,
+    ...stored,
   };
 }
 
@@ -100,9 +107,12 @@ export async function pushToCloudSyncUrl(data: JournalData, url?: string): Promi
   }
 
   const cleanUrl = targetUrl.trim();
-  // Support Firebase Realtime Database: if it doesn't end with .json, append .json
+  // Support Firebase Realtime Database: if it doesn't end with .json, append /journal.json
   let finalUrl = cleanUrl;
-  if (cleanUrl.includes("firebaseio.com") && !cleanUrl.endsWith(".json")) {
+  if (
+    (cleanUrl.includes("firebaseio.com") || cleanUrl.includes("firebasedatabase.app")) &&
+    !cleanUrl.endsWith(".json")
+  ) {
     finalUrl = cleanUrl.replace(/\/+$/, "") + "/journal.json";
   }
 
@@ -142,7 +152,10 @@ export async function fetchFromCloudSyncUrl(url?: string): Promise<JournalData |
   if (!targetUrl) return null;
 
   let finalUrl = targetUrl.trim();
-  if (finalUrl.includes("firebaseio.com") && !finalUrl.endsWith(".json")) {
+  if (
+    (finalUrl.includes("firebaseio.com") || finalUrl.includes("firebasedatabase.app")) &&
+    !finalUrl.endsWith(".json")
+  ) {
     finalUrl = finalUrl.replace(/\/+$/, "") + "/journal.json";
   }
 

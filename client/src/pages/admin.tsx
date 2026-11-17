@@ -170,40 +170,37 @@ export default function AdminPage() {
 
   const handleQuickSync = async (providedToken?: string) => {
     if (!journalData) return;
-    const tokenToUse = (providedToken || githubTokenInput || syncConfig.githubToken || "").trim();
-
-    if (!tokenToUse) {
-      setIsSyncModalOpen(true);
-      return;
-    }
-
     setIsGlobalSyncing(true);
-    setSyncProgressMsg("Connecting to GitHub and live backend...");
+    setSyncProgressMsg("Synchronizing with live Google Cloud Database & server backend...");
 
     try {
-      const result = await syncToLiveWebsite(
-        journalData,
-        tokenToUse,
-        githubRepoInput,
-        githubBranchInput
-      );
+      // 1. Push directly to Firebase Realtime Database (instant real-time sync for all devices)
+      await pushToCloudSyncUrl(journalData);
 
-      if (providedToken) {
-        const newConf = { ...syncConfig, githubToken: tokenToUse };
-        setSyncConfig(newConf);
-        saveCloudSyncConfig(newConf);
-        setGithubTokenInput(tokenToUse);
+      // 2. Also sync to local/serverless Express backend API
+      await fetch("/api/journal/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: journalData }),
+      }).catch(() => {});
+
+      // 3. If a GitHub token is provided, also commit to GitHub
+      const tokenToUse = (providedToken || githubTokenInput || syncConfig.githubToken || "").trim();
+      if (tokenToUse) {
+        setSyncProgressMsg("Committing to GitHub to update permanent production build...");
+        await deployToGitHubRepo(journalData, tokenToUse, githubRepoInput, githubBranchInput);
       }
 
-      setSyncProgressMsg(result.message);
       toast({
-        title: "Sync & Deployment Successful! 🚀",
-        description: result.message,
+        title: "⚡ Synchronized Successfully! 🌐",
+        description:
+          "All changes are live in the Cloud Database! Every device, phone, and visitor session will now see your updates immediately.",
       });
 
+      setSyncProgressMsg("Sync complete! Live worldwide across all devices.");
       setTimeout(() => {
         setIsSyncModalOpen(false);
-      }, 2500);
+      }, 2000);
     } catch (err: any) {
       toast({
         title: "Sync Failed",

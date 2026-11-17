@@ -39,6 +39,9 @@ export interface IStorage {
   verifyAdmin(password: string): boolean;
 }
 
+const FIREBASE_CLOUD_URL =
+  "https://jspg-6a797-default-rtdb.asia-southeast1.firebasedatabase.app/journal.json";
+
 export class JsonStorage implements IStorage {
   private dataFilePath: string;
   private users: Map<string, User>;
@@ -185,6 +188,13 @@ export class JsonStorage implements IStorage {
         fs.writeFileSync(fallbackPath, JSON.stringify(cleaned, null, 2), "utf-8");
         this.dataFilePath = fallbackPath;
       }
+
+      // Sync to live cloud Firebase database
+      fetch(FIREBASE_CLOUD_URL, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cleaned),
+      }).catch((fbErr) => console.warn("Firebase background save error:", fbErr));
     } catch (err) {
       console.error("Error writing journal data to disk:", err);
     }
@@ -210,6 +220,19 @@ export class JsonStorage implements IStorage {
   }
 
   async getJournalData(): Promise<JournalData> {
+    try {
+      const res = await fetch(FIREBASE_CLOUD_URL);
+      if (res.ok) {
+        const cloudData = await res.json();
+        if (cloudData && Array.isArray(cloudData.articles) && cloudData.articles.length > 0) {
+          const cleaned = this.deduplicateData(cloudData);
+          this.data = cleaned;
+          return cleaned;
+        }
+      }
+    } catch (fbErr) {
+      console.warn("Could not fetch from Firebase in getJournalData:", fbErr);
+    }
     return this.data;
   }
 
