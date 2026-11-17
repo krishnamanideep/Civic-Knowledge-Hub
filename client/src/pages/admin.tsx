@@ -164,6 +164,7 @@ export default function AdminPage() {
 
   // Quick 1-Click Sync Modal & State
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncMethod, setSyncMethod] = useState<"cloud" | "github">("cloud");
   const [isGlobalSyncing, setIsGlobalSyncing] = useState(false);
   const [syncProgressMsg, setSyncProgressMsg] = useState<string | null>(null);
 
@@ -2812,13 +2813,30 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-sm text-xs text-emerald-900 space-y-1">
-              <p className="font-bold">
-                Ready to deploy {articles.length} articles and {people.length} board members to live production!
-              </p>
-              <p className="text-[0.72rem] text-emerald-800">
-                To trigger the permanent Vercel global deployment across all sessions, enter your GitHub token once below. It will be stored in your browser so future syncs only take 1 click.
-              </p>
+            {/* Mode Switcher Tabs */}
+            <div className="flex border-b border-[#dfd7c9] gap-2">
+              <button
+                type="button"
+                onClick={() => setSyncMethod("cloud")}
+                className={`pb-2 px-3 text-xs font-bold transition-all border-b-2 ${
+                  syncMethod === "cloud"
+                    ? "border-emerald-700 text-emerald-800"
+                    : "border-transparent text-[#777] hover:text-[#333]"
+                }`}
+              >
+                🌐 Cloud Database (No GitHub Access Required)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSyncMethod("github")}
+                className={`pb-2 px-3 text-xs font-bold transition-all border-b-2 ${
+                  syncMethod === "github"
+                    ? "border-emerald-700 text-emerald-800"
+                    : "border-transparent text-[#777] hover:text-[#333]"
+                }`}
+              >
+                🐙 GitHub Deploy Token
+              </button>
             </div>
 
             {syncProgressMsg && (
@@ -2827,53 +2845,123 @@ export default function AdminPage() {
               </div>
             )}
 
-            <div className="space-y-3 text-xs">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="font-bold uppercase tracking-wider text-[#494c55]">
-                    GitHub Personal Access Token (classic or fine-grained) *
-                  </label>
-                  <a
-                    href="https://github.com/settings/tokens/new?scopes=repo&description=JPSG%20Journal%20Deploy%20Token"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#a45a40] hover:underline font-bold inline-flex items-center gap-1"
-                  >
-                    Generate Token on GitHub ↗
-                  </a>
+            {syncMethod === "cloud" && (
+              <div className="space-y-4 text-xs">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-sm text-emerald-900 space-y-1">
+                  <p className="font-bold">Instant Multi-Device Sync (Zero GitHub Access):</p>
+                  <p className="text-[0.72rem] text-emerald-800">
+                    Connect a free Firebase Realtime Database URL (e.g. <code className="font-mono bg-white px-1 border rounded">https://your-app-default-rtdb.firebaseio.com/journal.json</code>) or any REST database endpoint. Whenever you click Sync, it updates all sessions and phones in <strong>0.5 seconds</strong>.
+                  </p>
                 </div>
-                <input
-                  type="password"
-                  value={githubTokenInput}
-                  onChange={(e) => setGithubTokenInput(e.target.value)}
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                  className="w-full px-3.5 py-2.5 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs focus:outline-none focus:border-[#1f314d]"
-                  autoFocus
-                />
-                <p className="text-[0.7rem] text-[#6e6a62] mt-1">
-                  Stored securely in this browser only. Need a token? Click "Generate Token on GitHub" above (takes 20 seconds).
-                </p>
-              </div>
 
-              <div className="pt-2 flex flex-col sm:flex-row gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickSync(githubTokenInput)}
-                  disabled={isGlobalSyncing || !githubTokenInput.trim()}
-                  className="btn-primary flex-1 py-2.5 text-xs font-bold shadow flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 border-emerald-800 disabled:opacity-50 cursor-pointer"
-                >
-                  {isGlobalSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                  <span>{isGlobalSyncing ? "Deploying to Live Website..." : "🚀 Deploy Live to All Sessions"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCopyJson}
-                  className="btn-secondary px-3 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
-                  title="Copy JSON data to clipboard"
-                >
-                  <Copy size={13} /> Copy JSON
-                </button>
+                <div>
+                  <label className="block font-bold uppercase tracking-wider text-[#494c55] mb-1">
+                    Cloud Database REST URL *
+                  </label>
+                  <input
+                    type="text"
+                    value={cloudUrlInput}
+                    onChange={(e) => setCloudUrlInput(e.target.value)}
+                    placeholder="https://your-project.firebaseio.com/journal.json"
+                    className="w-full px-3.5 py-2.5 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs focus:outline-none focus:border-[#1f314d]"
+                    autoFocus
+                  />
+                  <p className="text-[0.7rem] text-[#6e6a62] mt-1">
+                    Free forever via Google Firebase (Console → Realtime Database). Reads and writes directly over HTTPS.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveCloudSync}
+                    disabled={isCloudSyncing || !cloudUrlInput.trim()}
+                    className="btn-primary flex-1 py-2.5 text-xs font-bold shadow flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 border-emerald-800 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isCloudSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                    <span>{isCloudSyncing ? "Syncing to Cloud..." : "⚡ Sync to Cloud Database (All Sessions)"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyJson}
+                    className="btn-secondary px-3 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
+                    title="Copy JSON data to clipboard"
+                  >
+                    <Copy size={13} /> Copy JSON
+                  </button>
+                </div>
               </div>
+            )}
+
+            {syncMethod === "github" && (
+              <div className="space-y-4 text-xs">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-sm text-blue-900 space-y-1">
+                  <p className="font-bold">Permanent Vercel Global Deployment via GitHub:</p>
+                  <p className="text-[0.72rem] text-blue-800">
+                    Commits your articles directly to your GitHub repository. Vercel automatically runs a production build and deploys it live across all edge servers worldwide within ~60 seconds.
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold uppercase tracking-wider text-[#494c55]">
+                      GitHub Personal Access Token (repo contents: write) *
+                    </label>
+                    <a
+                      href="https://github.com/settings/tokens/new?scopes=repo&description=JPSG%20Journal%20Deploy%20Token"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#a45a40] hover:underline font-bold inline-flex items-center gap-1"
+                    >
+                      Generate Token on GitHub ↗
+                    </a>
+                  </div>
+                  <input
+                    type="password"
+                    value={githubTokenInput}
+                    onChange={(e) => setGithubTokenInput(e.target.value)}
+                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="w-full px-3.5 py-2.5 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs focus:outline-none focus:border-[#1f314d]"
+                  />
+                  <p className="text-[0.7rem] text-[#6e6a62] mt-1">
+                    Stored securely in this browser only.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickSync(githubTokenInput)}
+                    disabled={isGlobalSyncing || !githubTokenInput.trim()}
+                    className="btn-primary flex-1 py-2.5 text-xs font-bold shadow flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 border-emerald-800 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isGlobalSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                    <span>{isGlobalSyncing ? "Deploying to Live Website..." : "🚀 Deploy Live to All Sessions"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyJson}
+                    className="btn-secondary px-3 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
+                    title="Copy JSON data to clipboard"
+                  >
+                    <Copy size={13} /> Copy JSON
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* AI Assistant Quick Option */}
+            <div className="pt-3 border-t border-[#dfd7c9] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#6e6a62]">
+              <span>
+                Want the AI Assistant to commit & deploy for you? Click <strong>Copy JSON</strong> and paste it in chat.
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyJson}
+                className="text-[#a45a40] hover:underline font-bold self-start sm:self-auto"
+              >
+                Copy JSON to Clipboard →
+              </button>
             </div>
           </div>
         </div>
