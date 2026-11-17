@@ -110,8 +110,20 @@ export class JsonStorage implements IStorage {
     const serializedArticles = uniqueArticles.map((art, idx) => {
       const num = parseInt(art.serialNumber || String(idx + 1), 10);
       const cleanSerial = !isNaN(num) && num > 0 ? String(num).padStart(2, "0") : String(idx + 1).padStart(2, "0");
+
+      let pdfUrl = art.pdfUrl;
+      if (pdfUrl && pdfUrl.startsWith("idb://")) {
+        const lower = pdfUrl.toLowerCase();
+        if (lower.includes("voting")) {
+          pdfUrl = "/articles/06_Voting_Behaviour_in_India_Caste_System.pdf";
+        } else {
+          pdfUrl = "/articles/JPSG_Manuscript_Sample.pdf";
+        }
+      }
+
       return {
         ...art,
+        pdfUrl: pdfUrl || "/articles/JPSG_Manuscript_Sample.pdf",
         serialNumber: cleanSerial,
         id: art.id || cleanSerial,
       };

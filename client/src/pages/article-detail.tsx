@@ -219,26 +219,25 @@ export default function ArticleDetailPage({ slug: propSlug }: { slug?: string })
 
           {/* Primary Action Buttons */}
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <a
-              href={article.pdfUrl}
-              download={pdfFilename}
-              className="btn-primary inline-flex items-center gap-2.5 px-6 py-3 text-sm font-bold shadow-sm"
+            <button
+              type="button"
+              onClick={() => safeDownloadPdf(article.pdfUrl, pdfFilename, article.slug)}
+              className="btn-primary inline-flex items-center gap-2.5 px-6 py-3 text-sm font-bold shadow-sm cursor-pointer"
             >
               <Download size={16} /> Download Full-Text PDF
-            </a>
-            <a
-              href={article.pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-secondary inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold"
+            </button>
+            <button
+              type="button"
+              onClick={() => safeOpenPdf(article.pdfUrl, article.title, article.slug)}
+              className="btn-secondary inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold cursor-pointer"
             >
               <span>View PDF in New Tab</span>
               <ExternalLink size={14} />
-            </a>
+            </button>
             <button
               type="button"
               onClick={handleShareUrl}
-              className="inline-flex items-center gap-1.5 px-3.5 py-3 text-xs font-semibold text-[#1f314d] hover:text-[#a45a40] bg-[#f0ebd9] hover:bg-[#eae3cd] border border-[#cfc5b3] rounded-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-3 text-xs font-semibold text-[#1f314d] hover:text-[#a45a40] bg-[#f0ebd9] hover:bg-[#eae3cd] border border-[#cfc5b3] rounded-xs transition-colors cursor-pointer"
             >
               <Share2 size={13} className="text-[#a45a40]" />
               <span>{urlCopied ? "Link Copied!" : "Share Link"}</span>
@@ -448,13 +447,13 @@ export default function ArticleDetailPage({ slug: propSlug }: { slug?: string })
                 Published in typeset format with full references, citations, and empirical analyses.
               </p>
             </div>
-            <a
-              href={article.pdfUrl}
-              download={pdfFilename}
-              className="btn-primary shrink-0 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold shadow-xs"
+            <button
+              type="button"
+              onClick={() => safeDownloadPdf(article.pdfUrl, pdfFilename, article.slug)}
+              className="btn-primary shrink-0 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold shadow-xs cursor-pointer"
             >
               <Download size={15} /> Download PDF (pp. {article.pages})
-            </a>
+            </button>
           </div>
 
           {/* Navigation to Prev/Next */}

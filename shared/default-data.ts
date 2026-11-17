@@ -251,6 +251,45 @@ export const initialJournalData: JournalData = {
       abstract:
         "Traditional artisans constitute an indispensable component of India's cultural economy, preserving centuries old craft traditions while contributing significantly to employment generation, rural livelihoods and sustainable development. Andhra Pradesh (AP), known for its rich heritage of handloom and handicraft products such as Uppada and Venkatagiri sarees, Dharmavaram silk, Kondapalli toys, Etikoppaka lacquerware, Kalamkari textiles and Narsapur lace, presents a compelling case for examining the role of digital transformation in artisan empowerment. The rapid expansion of digital technologies, including e-commerce platforms, digital payment systems, social media and mobile applications, has fundamentally altered how artisans access markets, interact with consumers and establish entrepreneurial identities. Simultaneously, national initiatives such as Digital India, the Open Network for Digital Commerce (ONDC), Government e-Marketplace (GeM) and specialized artisan focused platforms have created new opportunities for inclusive economic participation.\n\nThis paper combines contemporary literature, government reports and policy initiatives to evaluate how digital inclusion and technology influence market access for traditional workers and artisans in AP. It argues that digital platforms have evolved beyond commercial marketplaces to become instruments of entrepreneurship, financial inclusion, cultural preservation and livelihood diversification. However, the paper also highlights persistent barriers including digital literacy gaps, infrastructural disparities, branding limitations, logistical challenges and unequal access to digital resources that continue to restrict the equitable benefits of digital transformation. The study concludes that sustainable empowerment requires an integrated ecosystem where technological innovation is complemented by institutional support, capacity building, digital skills and collaborative governance. Strengthening such an ecosystem will not only improve artisans' economic resilience but also contribute to preserving AP's unique cultural heritage in an increasingly digital economy.",
     },
+    {
+      id: "06",
+      serialNumber: "06",
+      slug: "voting-behaviour-in-india-with-special-emphasis-on-caste-in-indian-political-system",
+      aliases: [
+        "voting-behaviour-in-india-with-special-emphasis-on-caste-in-indian-political-system",
+      ],
+      title:
+        "Voting Behaviour in India with Special Emphasis on Caste in Indian Political System",
+      section: "Original Research Article",
+      pages: "1–8",
+      doi: "",
+      pdfUrl: "/articles/06_Voting_Behaviour_in_India_Caste_System.pdf",
+      volume: "Volume 1",
+      issue: "Issue 1",
+      year: "2027",
+      date: "January–March 2027",
+      status: "published",
+      authors: [
+        {
+          name: "Gopi Madaboyina",
+          isCorresponding: true,
+          role: "Assistant Professor",
+          department: "",
+          institution: "Adikavi Nannaya University",
+          email: "gopimadaboyina@gmail.com",
+        },
+      ],
+      keywords: [
+        "Caste",
+        "Electoral Mobilization",
+        "Indian Politics",
+        "Political Parties",
+        "Politicization of Caste",
+        "Voting Behaviour",
+      ],
+      abstract:
+        "Voting behaviour is an essential component of democratic politics and provides an important basis for understanding the functioning of representative democracy. It reflects the political preferences, attitudes, perceptions and motivations of citizens in choosing their representatives and evaluating the policies and programmes of political parties. The study of voting behaviour extends beyond electoral statistics and voting patterns to examine the social, economic, psychological and political factors influencing electoral choices. In the Indian political system, caste continues to be one of the significant determinants of voting behaviour, despite constitutional provisions promoting equality, social justice and the prohibition of caste-based discrimination. The deep-rooted nature of the caste system and its influence on social relationships have contributed to the growing interaction between caste and politics. Political parties frequently consider caste composition while selecting candidates, formulating electoral strategies, mobilizing voters and consolidating political support. The politicization of caste and the caste-based mobilization of political communities have consequently become important features of electoral politics in India. Caste associations, community identities and regional political formations have also influenced electoral competition and political representation. However, caste does not operate independently; it interacts with other factors such as economic interests, political leadership, development, ideology, religion and regional aspirations. The present article examines the relationship between caste and voting behaviour in India, with particular emphasis on the politicization of caste, caste-based electoral mobilization and the strategies adopted by political parties. It argues that understanding the influence of caste is essential for analyzing electoral dynamics, democratic representation and the changing nature of Indian politics.",
+    },
   ],
   people: [
     {

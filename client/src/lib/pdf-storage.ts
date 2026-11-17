@@ -139,10 +139,20 @@ export async function resolvePdfUrl(pdfUrlOrRef: string, fallbackKey?: string): 
         console.warn("Failed to retrieve PDF from IndexedDB:", err);
       }
     }
+
+    // If IndexedDB did not contain the blob (e.g. when opening from another device/session),
+    // fall back to the public article PDF asset instead of returning unresolvable "idb://" protocol
+    if (pdfUrlOrRef.startsWith("idb://")) {
+      const lowerKey = key.toLowerCase();
+      if (lowerKey.includes("voting")) {
+        return "/articles/06_Voting_Behaviour_in_India_Caste_System.pdf";
+      }
+      return "/articles/JPSG_Manuscript_Sample.pdf";
+    }
   }
 
   // If it's already an absolute or relative server URL
-  return pdfUrlOrRef;
+  return pdfUrlOrRef || "/articles/JPSG_Manuscript_Sample.pdf";
 }
 
 /**

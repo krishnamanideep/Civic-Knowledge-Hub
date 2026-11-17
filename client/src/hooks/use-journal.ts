@@ -54,8 +54,20 @@ export function deduplicateJournalData(data: JournalData): JournalData {
   const serializedArticles = uniqueArticles.map((art, idx) => {
     const num = parseInt(art.serialNumber || String(idx + 1), 10);
     const cleanSerial = !isNaN(num) && num > 0 ? String(num).padStart(2, "0") : String(idx + 1).padStart(2, "0");
+
+    let pdfUrl = art.pdfUrl;
+    if (pdfUrl && pdfUrl.startsWith("idb://")) {
+      const lower = pdfUrl.toLowerCase();
+      if (lower.includes("voting")) {
+        pdfUrl = "/articles/06_Voting_Behaviour_in_India_Caste_System.pdf";
+      } else {
+        pdfUrl = "/articles/JPSG_Manuscript_Sample.pdf";
+      }
+    }
+
     return {
       ...art,
+      pdfUrl: pdfUrl || "/articles/JPSG_Manuscript_Sample.pdf",
       serialNumber: cleanSerial,
       id: art.id || cleanSerial,
     };
@@ -316,7 +328,19 @@ export function useJournalData() {
   const query = useQuery<JournalData>({
     queryKey: ["journal-data"],
     queryFn: async () => {
-      // 1. Try local Express API (if server backend is active)
+      // 1. Fetch live data from Cloud Database (Firebase) - instant real-time sync across all devices
+      try {
+        const cloudData = await fetchFromCloudSyncUrl();
+        if (cloudData && Array.isArray(cloudData.articles) && cloudData.articles.length > 0) {
+          const cleaned = deduplicateJournalData(cloudData);
+          saveLocalJournalData(cleaned);
+          return cleaned;
+        }
+      } catch (cloudErr) {
+        console.warn("Could not fetch from cloud sync URL:", cloudErr);
+      }
+
+      // 2. Try local Express API (if server backend is active)
       try {
         const res = await fetch("/api/journal/data");
         const contentType = res.headers.get("content-type") || "";
@@ -329,19 +353,7 @@ export function useJournalData() {
           }
         }
       } catch {
-        // Fetch failed, continue to cloud/local check
-      }
-
-      // 2. Try configured Cloud Sync URL (Firebase, Supabase, or remote REST DB)
-      try {
-        const cloudData = await fetchFromCloudSyncUrl();
-        if (cloudData && Array.isArray(cloudData.articles) && cloudData.articles.length > 0) {
-          const cleaned = deduplicateJournalData(cloudData);
-          saveLocalJournalData(cleaned);
-          return cleaned;
-        }
-      } catch (cloudErr) {
-        console.warn("Could not fetch from cloud sync URL:", cloudErr);
+        // Fetch failed, continue to local check
       }
 
       // 3. Fallback to browser local storage or bundled defaults
