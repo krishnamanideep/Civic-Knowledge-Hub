@@ -34,6 +34,7 @@ export interface IStorage {
 
   getSettings(): Promise<JournalSettings>;
   updateSettings(updates: Partial<JournalSettings>): Promise<JournalSettings>;
+  setJournalData(data: JournalData): Promise<JournalData>;
   resetToDefault(): Promise<JournalData>;
   verifyAdmin(password: string): boolean;
 }
@@ -419,6 +420,12 @@ export class JsonStorage implements IStorage {
     };
     this.saveData();
     return this.data.settings;
+  }
+
+  async setJournalData(newData: JournalData): Promise<JournalData> {
+    const cleaned = this.deduplicateData(newData);
+    this.saveData(cleaned);
+    return cleaned;
   }
 
   async resetToDefault(): Promise<JournalData> {

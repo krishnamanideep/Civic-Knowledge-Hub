@@ -232,26 +232,102 @@ export async function deployToGitHubRepo(
   }
 
   const jsonContent = JSON.stringify(data, null, 2);
-  const tsContent = `import { type JournalData } from "@shared/schema";\n\nexport const initialJournalData: JournalData = ${jsonContent};\n`;
+  const tsDefaultDataContent = `import { type JournalData } from "@shared/schema";\n\nexport const initialJournalData: JournalData = ${jsonContent};\n`;
+  const tsArticlesContent = `import { type JournalArticle, type Author } from "@shared/schema";\nexport type { JournalArticle, Author };\n\nexport const currentIssueArticles: JournalArticle[] = ${JSON.stringify(
+    data.articles,
+    null,
+    2
+  )};\n\nlet _dynamicArticles: JournalArticle[] = currentIssueArticles;\n\nexport function setDynamicArticles(articles: JournalArticle[]) {\n  if (Array.isArray(articles) && articles.length > 0) {\n    const seen = new Set<string>();\n    const unique: JournalArticle[] = [];\n    for (const a of articles) {\n      const key = (a.slug || a.id || a.serialNumber || a.title).toLowerCase().trim();\n      if (!seen.has(key)) {\n        seen.add(key);\n        unique.push(a);\n      }\n    }\n    _dynamicArticles = unique;\n  }\n}\n\nexport function getDynamicArticles(): JournalArticle[] {\n  return _dynamicArticles;\n}\n\nexport function getArticleBySlug(slug: string, customList?: JournalArticle[]): JournalArticle | undefined {\n  if (!slug) return undefined;\n  const normalized = slug.toLowerCase().trim();\n  const list = customList || _dynamicArticles;\n  return list.find(\n    (a) =>\n      a.slug.toLowerCase() === normalized ||\n      a.id.toLowerCase() === normalized ||\n      a.serialNumber.toLowerCase() === normalized ||\n      a.aliases?.some((alias) => alias.toLowerCase() === normalized),\n  );\n}\n\nexport function getCitation(\n  article: JournalArticle,\n  style: "APA" | "MLA" | "Chicago" | "BibTeX",\n): string {\n  const authorNames = article.authors.map((a) => a.name).join(", ");\n  const doiSuffix = article.doi && !article.doi.includes("10.XXXXX") ? \` \${article.doi}\` : "";\n  switch (style) {\n    case "APA":\n      return \`\${authorNames} (\${article.year}). \${article.title}. Journal of Politics, Society and Governance, 1(1), \${article.pages}.\${doiSuffix}\`;\n    case "MLA":\n      return \`\${authorNames}. "\${article.title}." Journal of Politics, Society and Governance, vol. 1, no. 1, \${article.year}, pp. \${article.pages}.\`;\n    case "Chicago":\n      return \`\${authorNames}. "\${article.title}." Journal of Politics, Society and Governance 1, no. 1 (\${article.year}): \${article.pages}.\${doiSuffix}\`;\n    case "BibTeX":\n      return \`@article{jpsg_\${article.id}_\${article.year},\n  title={\${article.title}},\n  author={\${authorNames}},\n  journal={Journal of Politics, Society and Governance},\n  volume={1},\n  number={1},\n  pages={\${article.pages}},\n  year={\${article.year}},\n  publisher={Democratic Organisation for Civic Knowledge Foundation}\n}\`;\n  }\n}\n`;
 
   // Update server/data/journal-data.json
   const resultJson = await updateFile(
     "server/data/journal-data.json",
     jsonContent,
-    `Admin Global Update: Sync journal-data.json (${data.articles.length} articles)`
+    `Admin Global Live Sync: Update journal-data.json (${data.articles.length} articles, ${data.people.length} board members)`
   );
 
   // Update shared/default-data.ts
   await updateFile(
     "shared/default-data.ts",
-    tsContent,
-    `Admin Global Update: Sync shared/default-data.ts for global production build`
+    tsDefaultDataContent,
+    `Admin Global Live Sync: Update shared/default-data.ts (${data.articles.length} articles)`
+  );
+
+  // Update client/src/data/articles.ts
+  await updateFile(
+    "client/src/data/articles.ts",
+    tsArticlesContent,
+    `Admin Global Live Sync: Update client/src/data/articles.ts (${data.articles.length} articles)`
   );
 
   return {
     success: true,
     commitUrl: resultJson.commit?.html_url,
     message:
-      "Successfully committed changes to GitHub repository! Vercel is now building and deploying your updates live to all devices worldwide.",
+      "Successfully committed changes to GitHub repository! Vercel is now building and deploying your updates live to all sessions worldwide.",
+  };
+}
+
+// Master 1-Click Sync Helper: syncs to backend API and deploys to GitHub / Vercel
+export async function syncToLiveWebsite(
+  data: JournalData,
+  token?: string,
+  repo: string = "krishnamanideep/Civic-Knowledge-Hub",
+  branch: string = "main"
+): Promise<{
+  success: boolean;
+  serverSynced: boolean;
+  githubDeployed: boolean;
+  commitUrl?: string;
+  message: string;
+}> {
+  let serverSynced = false;
+  let githubDeployed = false;
+  let commitUrl: string | undefined = undefined;
+
+  // 1. Immediately sync with active serverless backend API
+  try {
+    const res = await fetch("/api/journal/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data }),
+    });
+    if (res.ok) {
+      serverSynced = true;
+    }
+  } catch (err) {
+    console.warn("Backend /api/journal/sync not reachable:", err);
+  }
+
+  // 2. Also push to Cloud URL if configured
+  try {
+    await pushToCloudSyncUrl(data);
+  } catch (err) {
+    console.warn("Push to cloud URL failed:", err);
+  }
+
+  // 3. Commit to GitHub to trigger global Vercel production deployment
+  const cleanToken = (token || getCloudSyncConfig().githubToken || "").trim();
+  if (cleanToken) {
+    const ghRes = await deployToGitHubRepo(data, cleanToken, repo, branch);
+    githubDeployed = ghRes.success;
+    commitUrl = ghRes.commitUrl;
+    return {
+      success: true,
+      serverSynced,
+      githubDeployed: true,
+      commitUrl,
+      message:
+        "Changes deployed! Committed to GitHub repository. Vercel is building and updating all edge sessions worldwide (~60s).",
+    };
+  }
+
+  return {
+    success: serverSynced,
+    serverSynced,
+    githubDeployed: false,
+    message: serverSynced
+      ? "Synchronized with live backend API! (To trigger a permanent worldwide Vercel redeployment for all sessions, provide a GitHub token)."
+      : "Saved locally. Enter a GitHub token to deploy globally to all sessions.",
   };
 }

@@ -99,6 +99,19 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/journal/sync", async (req: Request, res: Response) => {
+    try {
+      const { data } = req.body;
+      if (!data || !Array.isArray(data.articles)) {
+        return res.status(400).json({ message: "Invalid payload: 'data' object with 'articles' array is required." });
+      }
+      const updated = await storage.setJournalData(data);
+      res.json({ success: true, message: "Journal data synchronized successfully", data: updated });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to sync journal data" });
+    }
+  });
+
   app.post("/api/journal/reset", async (_req: Request, res: Response) => {
     try {
       const data = await storage.resetToDefault();

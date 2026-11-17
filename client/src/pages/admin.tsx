@@ -61,6 +61,7 @@ import {
   pushToCloudSyncUrl,
   fetchFromCloudSyncUrl,
   deployToGitHubRepo,
+  syncToLiveWebsite,
   type CloudSyncConfig,
 } from "@/lib/cloud-sync";
 
@@ -160,6 +161,59 @@ export default function AdminPage() {
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
   const [importJsonText, setImportJsonText] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+
+  // Quick 1-Click Sync Modal & State
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isGlobalSyncing, setIsGlobalSyncing] = useState(false);
+  const [syncProgressMsg, setSyncProgressMsg] = useState<string | null>(null);
+
+  const handleQuickSync = async (providedToken?: string) => {
+    if (!journalData) return;
+    const tokenToUse = (providedToken || githubTokenInput || syncConfig.githubToken || "").trim();
+
+    if (!tokenToUse) {
+      setIsSyncModalOpen(true);
+      return;
+    }
+
+    setIsGlobalSyncing(true);
+    setSyncProgressMsg("Connecting to GitHub and live backend...");
+
+    try {
+      const result = await syncToLiveWebsite(
+        journalData,
+        tokenToUse,
+        githubRepoInput,
+        githubBranchInput
+      );
+
+      if (providedToken) {
+        const newConf = { ...syncConfig, githubToken: tokenToUse };
+        setSyncConfig(newConf);
+        saveCloudSyncConfig(newConf);
+        setGithubTokenInput(tokenToUse);
+      }
+
+      setSyncProgressMsg(result.message);
+      toast({
+        title: "Sync & Deployment Successful! 🚀",
+        description: result.message,
+      });
+
+      setTimeout(() => {
+        setIsSyncModalOpen(false);
+      }, 2500);
+    } catch (err: any) {
+      toast({
+        title: "Sync Failed",
+        description: err.message,
+        variant: "destructive",
+      });
+      setSyncProgressMsg(`Error: ${err.message}`);
+    } finally {
+      setIsGlobalSyncing(false);
+    }
+  };
 
   // GitHub Deploy Handler
   const handleDeployToGitHub = async () => {
@@ -845,10 +899,13 @@ export default function AdminPage() {
             </a>
             <button
               type="button"
-              onClick={() => setActiveTab("sync")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[#a45a40] hover:bg-[#8e4933] text-white font-bold transition-colors shadow-xs"
+              onClick={() => handleQuickSync()}
+              disabled={isGlobalSyncing}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-sm bg-emerald-700 hover:bg-emerald-800 text-white font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+              title="Sync and deploy all articles and changes directly to live website for all sessions"
             >
-              <Globe size={13} /> Deploy to Live Site
+              <RefreshCw size={13} className={isGlobalSyncing ? "animate-spin" : ""} />
+              <span>{isGlobalSyncing ? "Syncing Live..." : "⚡ Sync to Live Website"}</span>
             </button>
             <Link
               href="/"
@@ -897,31 +954,27 @@ export default function AdminPage() {
       </nav>
 
       {/* Live Deployment Status Notice Banner */}
-      <div className="bg-[#fff9e6] border-b border-[#f1e1a6] py-2.5 px-4 text-xs text-[#7d5e12]">
+      <div className="bg-[#f0f9f4] border-b border-[#c8e6d9] py-2.5 px-4 text-xs text-[#1e5a3c]">
         <div className="page-wrap flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#f1d070] text-[#5c4204] font-bold text-[0.7rem] shrink-0">
-              i
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[0.7rem] shrink-0">
+              ⚡
             </span>
             <span>
-              <strong>Global Reflection Notice:</strong> All edits are saved immediately in this browser. To reflect changes across all other devices, phones, and sessions worldwide, use the{" "}
-              <button
-                type="button"
-                onClick={() => setActiveTab("sync")}
-                className="underline font-bold text-[#a45a40] hover:text-[#1f314d]"
-              >
-                Global Deploy & Cloud Sync tool
-              </button>{" "}
-              to publish to GitHub/Vercel or connect a cloud database.
+              <strong>Worldwide Sync:</strong> Edits reflect in your local session. To deploy changes directly to the live website so all other devices and sessions see them, click <strong>Sync to Live Website</strong>.
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setActiveTab("sync")}
-            className="px-2.5 py-1 bg-[#1f314d] hover:bg-[#2b446b] text-white rounded text-[0.7rem] font-bold shrink-0 inline-flex items-center gap-1 shadow-2xs"
-          >
-            <Globe size={11} /> Open Deploy Panel →
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleQuickSync()}
+              disabled={isGlobalSyncing}
+              className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-bold shrink-0 inline-flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw size={12} className={isGlobalSyncing ? "animate-spin" : ""} />
+              <span>{isGlobalSyncing ? "Deploying..." : "⚡ Sync to Live Website"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -970,10 +1023,26 @@ export default function AdminPage() {
 
             {/* Quick Actions Card */}
             <div className="border border-[#d6cfc2] bg-[#fdfbf7] p-6 rounded-sm shadow-sm">
-              <h2 className="font-editorial text-xl font-bold text-[#1f314d] mb-4">
-                Quick Editorial Actions
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <h2 className="font-editorial text-xl font-bold text-[#1f314d]">
+                  Quick Editorial Actions
+                </h2>
+                <span className="text-xs text-emerald-800 font-semibold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                  Ready to deploy to all sessions
+                </span>
+              </div>
               <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleQuickSync()}
+                  disabled={isGlobalSyncing}
+                  className="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold shadow-sm bg-emerald-700 hover:bg-emerald-800 border-emerald-800 cursor-pointer disabled:opacity-50"
+                  title="Deploy current state directly to live website for all sessions"
+                >
+                  <RefreshCw size={15} className={isGlobalSyncing ? "animate-spin" : ""} />
+                  <span>{isGlobalSyncing ? "Syncing..." : "⚡ Sync to Live Website (All Sessions)"}</span>
+                </button>
                 <button
                   type="button"
                   onClick={openNewArticleModal}
@@ -1052,13 +1121,25 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={openNewArticleModal}
-                className="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold shadow-sm self-start sm:self-auto"
-              >
-                <Plus size={15} /> Upload / Add New Article
-              </button>
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => handleQuickSync()}
+                  disabled={isGlobalSyncing}
+                  className="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold shadow-sm bg-emerald-700 hover:bg-emerald-800 border-emerald-800 cursor-pointer disabled:opacity-50"
+                  title="Deploy all changes live to all sessions across the globe"
+                >
+                  <RefreshCw size={14} className={isGlobalSyncing ? "animate-spin" : ""} />
+                  <span>{isGlobalSyncing ? "Syncing Live..." : "⚡ Sync to Live Website"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={openNewArticleModal}
+                  className="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold shadow-sm"
+                >
+                  <Plus size={15} /> Upload / Add New Article
+                </button>
+              </div>
             </div>
 
             {/* Search Bar */}
@@ -2699,6 +2780,100 @@ export default function AdminPage() {
                   <p className="text-sm font-semibold">No PDF document loaded</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== 1-CLICK SYNC & GLOBAL DEPLOY MODAL ==================== */}
+      {isSyncModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#f7f4ec] border border-[#d6cfc2] rounded-sm shadow-2xl max-w-xl w-full p-6 space-y-5 my-auto">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-full bg-emerald-100 text-emerald-800">
+                  <RefreshCw size={22} className={isGlobalSyncing ? "animate-spin" : ""} />
+                </div>
+                <div>
+                  <h3 className="font-editorial text-xl font-bold text-[#1f314d]">
+                    ⚡ Deploy Changes Live to All Sessions
+                  </h3>
+                  <p className="text-xs text-[#6e6a62]">
+                    Sync your articles & updates across every device and visitor worldwide
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSyncModalOpen(false)}
+                className="text-2xl leading-none text-[#77736d] hover:text-[#1f314d]"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-sm text-xs text-emerald-900 space-y-1">
+              <p className="font-bold">
+                Ready to deploy {articles.length} articles and {people.length} board members to live production!
+              </p>
+              <p className="text-[0.72rem] text-emerald-800">
+                To trigger the permanent Vercel global deployment across all sessions, enter your GitHub token once below. It will be stored in your browser so future syncs only take 1 click.
+              </p>
+            </div>
+
+            {syncProgressMsg && (
+              <div className="p-3 bg-blue-50 border-l-4 border-blue-600 text-xs text-blue-900 font-medium">
+                {syncProgressMsg}
+              </div>
+            )}
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold uppercase tracking-wider text-[#494c55]">
+                    GitHub Personal Access Token (classic or fine-grained) *
+                  </label>
+                  <a
+                    href="https://github.com/settings/tokens/new?scopes=repo&description=JPSG%20Journal%20Deploy%20Token"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#a45a40] hover:underline font-bold inline-flex items-center gap-1"
+                  >
+                    Generate Token on GitHub ↗
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  value={githubTokenInput}
+                  onChange={(e) => setGithubTokenInput(e.target.value)}
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#cfc7b9] rounded-sm font-mono text-xs focus:outline-none focus:border-[#1f314d]"
+                  autoFocus
+                />
+                <p className="text-[0.7rem] text-[#6e6a62] mt-1">
+                  Stored securely in this browser only. Need a token? Click "Generate Token on GitHub" above (takes 20 seconds).
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickSync(githubTokenInput)}
+                  disabled={isGlobalSyncing || !githubTokenInput.trim()}
+                  className="btn-primary flex-1 py-2.5 text-xs font-bold shadow flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 border-emerald-800 disabled:opacity-50 cursor-pointer"
+                >
+                  {isGlobalSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                  <span>{isGlobalSyncing ? "Deploying to Live Website..." : "🚀 Deploy Live to All Sessions"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyJson}
+                  className="btn-secondary px-3 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
+                  title="Copy JSON data to clipboard"
+                >
+                  <Copy size={13} /> Copy JSON
+                </button>
+              </div>
             </div>
           </div>
         </div>
