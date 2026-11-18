@@ -208,19 +208,21 @@ export async function resolvePdfUrl(pdfUrlOrRef: string, fallbackKey?: string): 
 
 /**
  * Universal safe function to open any article PDF in a new browser tab without
- * getting blocked by browser top-frame data URL restrictions.
+ * getting blocked by browser top-frame data URL restrictions and without triggering accidental downloads.
  */
 export async function safeOpenPdf(pdfUrlOrRef: string, title?: string, fallbackKey?: string): Promise<void> {
   if (typeof window === "undefined") return;
 
   const resolved = await resolvePdfUrl(pdfUrlOrRef, fallbackKey);
 
-  // Attempt window.open with the safe resolved URL
-  const win = window.open(resolved, "_blank", "noopener,noreferrer");
-  if (!win) {
-    // Pop-up blocker triggered: fall back to downloading
-    safeDownloadPdf(resolved, `${(title || "article").replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`);
-  }
+  // Use a clean anchor element click to open in a new tab
+  const a = document.createElement("a");
+  a.href = resolved;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 /**
