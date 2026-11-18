@@ -141,14 +141,65 @@ export async function resolvePdfUrl(pdfUrlOrRef: string, fallbackKey?: string): 
     }
 
     // If IndexedDB did not contain the blob (e.g. when opening from another device/session),
-    // fall back to the public article PDF asset instead of returning unresolvable "idb://" protocol
-    if (pdfUrlOrRef.startsWith("idb://")) {
+    // attempt to fetch from Firebase cloud storage before falling back
+    if (pdfUrlOrRef.startsWith("idb://") && key) {
+      try {
+        const cloudUrl = `https://jspg-6a797-default-rtdb.asia-southeast1.firebasedatabase.app/pdfs/${key}.json`;
+        const res = await fetch(cloudUrl);
+        if (res.ok) {
+          const payload = await res.json();
+          if (payload && payload.dataUrl) {
+            const blob = dataUrlToBlob(payload.dataUrl);
+            const blobUrl = URL.createObjectURL(blob);
+            memoryBlobUrls.set(key, blobUrl);
+            memoryBlobUrls.set(pdfUrlOrRef, blobUrl);
+            savePdfToIndexedDB(key, blob).catch(console.warn);
+            return blobUrl;
+          }
+        }
+      } catch (cloudErr) {
+        console.warn("Could not retrieve cloud PDF for key:", key, cloudErr);
+      }
+
       const lowerKey = key.toLowerCase();
       if (lowerKey.includes("voting")) {
         return "/articles/06_Voting_Behaviour_in_India_Caste_System.pdf";
+      } else if (lowerKey.includes("artisan") || lowerKey.includes("digital-inclusion") || lowerKey.includes("05")) {
+        return "/articles/JPSG_Digital_Inclusion_Artisans_AP_Full_Paper.pdf";
+      } else if (lowerKey.includes("environmental") || lowerKey.includes("04")) {
+        return "/articles/JPSG_Environmental_Governance_in_India.pdf";
+      } else if (lowerKey.includes("microfinance") || lowerKey.includes("03")) {
+        return "/articles/JPSG_Microfinance_Women_SHGs_Guntur.pdf";
+      } else if (lowerKey.includes("consciousness") || lowerKey.includes("harmony") || lowerKey.includes("02")) {
+        return "/articles/JPSG_Global_Harmony_Through_Consciousness.pdf";
+      } else if (lowerKey.includes("heroic") || lowerKey.includes("01")) {
+        return "/articles/JPSG_Beyond_the_Heroic_Narrative_Women_AP.pdf";
       }
       return "/articles/JPSG_Manuscript_Sample.pdf";
     }
+  }
+
+  // If it's a Firebase RTDB cloud PDF endpoint (e.g. https://.../pdfs/<key>.json)
+  if (pdfUrlOrRef.includes("/pdfs/") && pdfUrlOrRef.endsWith(".json")) {
+    try {
+      const res = await fetch(pdfUrlOrRef);
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload && payload.dataUrl) {
+          const blob = dataUrlToBlob(payload.dataUrl);
+          const blobUrl = URL.createObjectURL(blob);
+          memoryBlobUrls.set(pdfUrlOrRef, blobUrl);
+          if (fallbackKey) {
+            memoryBlobUrls.set(fallbackKey, blobUrl);
+            savePdfToIndexedDB(fallbackKey, blob).catch(console.warn);
+          }
+          return blobUrl;
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch cloud PDF from Firebase:", err);
+    }
+    return "/articles/JPSG_Manuscript_Sample.pdf";
   }
 
   // If it's already an absolute or relative server URL

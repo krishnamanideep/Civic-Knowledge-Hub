@@ -395,39 +395,101 @@ export default function AdminPage() {
     });
   };
 
-  // Upload PDF Handler with IndexedDB Persistence
+  // Upload PDF Handler with Cloud Storage & IndexedDB Persistence
   const handleFileUpload = async (file: File) => {
     if (!file) return;
     setUploadingPdf(true);
 
     try {
-      // 1. Always store locally in IndexedDB first so it is available 100% reliably
-      const key = `${articleForm.slug || "manuscript"}-${Date.now()}`;
-      const idbRef = await savePdfToIndexedDB(key, file);
+      const slug =
+        articleForm.slug.trim() ||
+        articleForm.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)+/g, "") ||
+        "manuscript";
+      const key = `${slug}-${Date.now()}`;
 
-      setArticleForm((prev) => ({ ...prev, pdfUrl: idbRef }));
-      toast({
-        title: "PDF Saved into Journal System",
-        description: `${file.name} (${Math.round(file.size / 1024)} KB) is loaded and ready!`,
+      // 1. Always store locally in IndexedDB first for instant preview on this browser
+      await savePdfToIndexedDB(key, file);
+
+      // 2. Convert file to base64 data URL
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
 
-      // 2. Also attempt upload to Express server if backend is active
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      // 3. Upload to Firebase Cloud Database so ALL devices and sessions across the world can access it
+      const cloudPdfUrl = `https://jspg-6a797-default-rtdb.asia-southeast1.firebasedatabase.app/pdfs/${key}.json`;
+      let cloudUploaded = false;
 
-      const contentType = res.headers.get("content-type") || "";
-      if (res.ok && contentType.includes("application/json")) {
-        const data = await res.json();
-        if (data.url) {
-          setArticleForm((prev) => ({ ...prev, pdfUrl: data.url }));
+      try {
+        const cloudRes = await fetch(cloudPdfUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dataUrl,
+            filename: file.name,
+            size: file.size,
+            uploadedAt: new Date().toISOString(),
+          }),
+        });
+
+        if (cloudRes.ok) {
+          cloudUploaded = true;
+          setArticleForm((prev) => ({ ...prev, pdfUrl: cloudPdfUrl }));
+          toast({
+            title: "PDF Uploaded to Cloud Database! 🌐",
+            description: `${file.name} (${Math.round(file.size / 1024)} KB) is live in the cloud and accessible on all devices worldwide!`,
+          });
         }
+      } catch (cloudErr) {
+        console.warn("Direct Firebase PDF upload failed, trying backend upload:", cloudErr);
+      }
+
+      if (!cloudUploaded) {
+        // Fallback: Also attempt upload to Express server if backend is active
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const contentType = res.headers.get("content-type") || "";
+          if (res.ok && contentType.includes("application/json")) {
+            const data = await res.json();
+            if (data.url) {
+              setArticleForm((prev) => ({ ...prev, pdfUrl: data.url }));
+              toast({
+                title: "PDF Uploaded to Server",
+                description: `${file.name} uploaded successfully!`,
+              });
+              return;
+            }
+          }
+        } catch {
+          // ignore
+        }
+
+        // Final fallback: use IndexedDB reference
+        const idbRef = `idb://pdf/${key}`;
+        setArticleForm((prev) => ({ ...prev, pdfUrl: idbRef }));
+        toast({
+          title: "PDF Saved into Journal System",
+          description: `${file.name} (${Math.round(file.size / 1024)} KB) is loaded and ready!`,
+        });
       }
     } catch (err: any) {
-      console.warn("Server upload not reachable (static hosting), safely stored in IndexedDB:", err);
+      console.error("PDF upload error:", err);
+      toast({
+        title: "Upload Failed",
+        description: err.message || "Could not process PDF file",
+        variant: "destructive",
+      });
     } finally {
       setUploadingPdf(false);
     }

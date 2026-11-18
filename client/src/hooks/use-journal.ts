@@ -57,9 +57,19 @@ export function deduplicateJournalData(data: JournalData): JournalData {
 
     let pdfUrl = art.pdfUrl;
     if (pdfUrl && pdfUrl.startsWith("idb://")) {
-      const lower = pdfUrl.toLowerCase();
-      if (lower.includes("voting")) {
+      const lower = (pdfUrl + " " + (art.slug || "") + " " + (art.title || "")).toLowerCase();
+      if (lower.includes("voting") || cleanSerial === "06") {
         pdfUrl = "/articles/06_Voting_Behaviour_in_India_Caste_System.pdf";
+      } else if (lower.includes("artisan") || lower.includes("digital-inclusion") || cleanSerial === "05") {
+        pdfUrl = "/articles/JPSG_Digital_Inclusion_Artisans_AP_Full_Paper.pdf";
+      } else if (lower.includes("environmental") || cleanSerial === "04") {
+        pdfUrl = "/articles/JPSG_Environmental_Governance_in_India.pdf";
+      } else if (lower.includes("microfinance") || cleanSerial === "03") {
+        pdfUrl = "/articles/JPSG_Microfinance_Women_SHGs_Guntur.pdf";
+      } else if (lower.includes("consciousness") || lower.includes("harmony") || cleanSerial === "02") {
+        pdfUrl = "/articles/JPSG_Global_Harmony_Through_Consciousness.pdf";
+      } else if (lower.includes("heroic") || cleanSerial === "01") {
+        pdfUrl = "/articles/JPSG_Beyond_the_Heroic_Narrative_Women_AP.pdf";
       } else {
         pdfUrl = "/articles/JPSG_Manuscript_Sample.pdf";
       }
