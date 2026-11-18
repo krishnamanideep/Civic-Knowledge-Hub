@@ -193,11 +193,11 @@ export class JsonStorage implements IStorage {
     // 3. Default initialization
     const cloned = JSON.parse(JSON.stringify(initialJournalData));
     const cleaned = this.deduplicateData(cloned);
-    this.saveData(cleaned);
+    this.saveData(cleaned).catch(() => {});
     return cleaned;
   }
 
-  private saveData(dataToSave: JournalData = this.data) {
+  private async saveData(dataToSave: JournalData = this.data): Promise<void> {
     try {
       const cleaned = this.deduplicateData(dataToSave);
       this.data = cleaned;
@@ -211,12 +211,16 @@ export class JsonStorage implements IStorage {
         this.dataFilePath = fallbackPath;
       }
 
-      // Sync to live cloud Firebase database
-      fetch(FIREBASE_CLOUD_URL, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleaned),
-      }).catch((fbErr) => console.warn("Firebase background save error:", fbErr));
+      // Sync to live cloud Firebase database and await so serverless handlers don't terminate prematurely
+      try {
+        await fetch(FIREBASE_CLOUD_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cleaned),
+        });
+      } catch (fbErr) {
+        console.warn("Firebase cloud save error:", fbErr);
+      }
     } catch (err) {
       console.error("Error writing journal data to disk:", err);
     }
@@ -303,7 +307,7 @@ export class JsonStorage implements IStorage {
         status: insertArticle.status || current.status || "published",
       };
       this.data.articles[existingIndex] = updated;
-      this.saveData();
+      await this.saveData();
       return updated;
     }
 
@@ -328,7 +332,7 @@ export class JsonStorage implements IStorage {
     };
 
     this.data.articles.push(newArticle);
-    this.saveData();
+    await this.saveData();
     return newArticle;
   }
 
@@ -346,7 +350,7 @@ export class JsonStorage implements IStorage {
     };
 
     this.data.articles[index] = updated;
-    this.saveData();
+    await this.saveData();
     return updated;
   }
 
@@ -354,7 +358,7 @@ export class JsonStorage implements IStorage {
     const initLen = this.data.articles.length;
     this.data.articles = this.data.articles.filter((a) => a.id !== id && a.slug !== id);
     if (this.data.articles.length !== initLen) {
-      this.saveData();
+      await this.saveData();
       return true;
     }
     return false;
@@ -386,7 +390,7 @@ export class JsonStorage implements IStorage {
         order: insertPerson.order || current.order,
       };
       this.data.people[existingIndex] = updated;
-      this.saveData();
+      await this.saveData();
       return updated;
     }
 
@@ -406,7 +410,7 @@ export class JsonStorage implements IStorage {
     };
 
     this.data.people.push(newPerson);
-    this.saveData();
+    await this.saveData();
     return newPerson;
   }
 
@@ -422,7 +426,7 @@ export class JsonStorage implements IStorage {
     };
 
     this.data.people[index] = updated;
-    this.saveData();
+    await this.saveData();
     return updated;
   }
 
@@ -430,7 +434,7 @@ export class JsonStorage implements IStorage {
     const initLen = this.data.people.length;
     this.data.people = this.data.people.filter((p) => p.id !== id);
     if (this.data.people.length !== initLen) {
-      this.saveData();
+      await this.saveData();
       return true;
     }
     return false;
@@ -450,7 +454,7 @@ export class JsonStorage implements IStorage {
     });
 
     this.data.people.sort((a, b) => a.order - b.order);
-    this.saveData();
+    await this.saveData();
     return this.data.people;
   }
 
@@ -463,20 +467,20 @@ export class JsonStorage implements IStorage {
       ...this.data.settings,
       ...updates,
     };
-    this.saveData();
+    await this.saveData();
     return this.data.settings;
   }
 
   async setJournalData(newData: JournalData): Promise<JournalData> {
     const cleaned = this.deduplicateData(newData);
-    this.saveData(cleaned);
+    await this.saveData(cleaned);
     return cleaned;
   }
 
   async resetToDefault(): Promise<JournalData> {
     const cloned = JSON.parse(JSON.stringify(initialJournalData));
     const cleaned = this.deduplicateData(cloned);
-    this.saveData(cleaned);
+    await this.saveData(cleaned);
     return cleaned;
   }
 }

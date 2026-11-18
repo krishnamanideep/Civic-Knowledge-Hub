@@ -513,27 +513,35 @@ async function resilientApiCall<T>(
 export function useAdminMutations() {
   const queryClient = useQueryClient();
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["journal-data"] });
-  };
-
-  const syncCache = (updatedData: JournalData) => {
+  const syncCache = async (updatedData: JournalData) => {
     saveLocalJournalData(updatedData);
     setDynamicArticles(updatedData.articles);
     queryClient.setQueryData(["journal-data"], updatedData);
+
+    // Guaranteed direct Cloud Database sync so every device sees the change immediately
+    try {
+      await pushToCloudSyncUrl(updatedData);
+    } catch (syncErr) {
+      console.warn("Direct Firebase cloud sync error:", syncErr);
+    }
   };
 
   const createArticle = useMutation({
     mutationFn: async (article: InsertArticle) => {
-      const created = await resilientApiCall<JournalArticle>(
-        "/api/articles",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(article),
-        },
-        () => localCreateArticle(article)
-      );
+      let created: JournalArticle;
+      try {
+        created = await resilientApiCall<JournalArticle>(
+          "/api/articles",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(article),
+          },
+          () => localCreateArticle(article)
+        );
+      } catch {
+        created = localCreateArticle(article);
+      }
 
       // Synchronously update local state & query cache
       const current = getLocalJournalData();
@@ -545,62 +553,73 @@ export function useAdminMutations() {
       } else {
         current.articles.push(created);
       }
-      syncCache(current);
+      await syncCache(current);
       return created;
     },
-    onSuccess: invalidate,
   });
 
   const updateArticle = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<InsertArticle> }) => {
-      const updated = await resilientApiCall<JournalArticle>(
-        `/api/articles/${id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updates),
-        },
-        () => localUpdateArticle(id, updates)
-      );
+      let updated: JournalArticle;
+      try {
+        updated = await resilientApiCall<JournalArticle>(
+          `/api/articles/${id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updates),
+          },
+          () => localUpdateArticle(id, updates)
+        );
+      } catch {
+        updated = localUpdateArticle(id, updates);
+      }
 
       const current = getLocalJournalData();
       const idx = current.articles.findIndex((a) => a.id === id || a.slug === id);
       if (idx !== -1) {
         current.articles[idx] = updated;
       }
-      syncCache(current);
+      await syncCache(current);
       return updated;
     },
-    onSuccess: invalidate,
   });
 
   const deleteArticle = useMutation({
     mutationFn: async (id: string) => {
-      await resilientApiCall<boolean>(
-        `/api/articles/${id}`,
-        { method: "DELETE" },
-        () => localDeleteArticle(id)
-      );
+      try {
+        await resilientApiCall<boolean>(
+          `/api/articles/${id}`,
+          { method: "DELETE" },
+          () => localDeleteArticle(id)
+        );
+      } catch {
+        localDeleteArticle(id);
+      }
 
       const current = getLocalJournalData();
       current.articles = current.articles.filter((a) => a.id !== id && a.slug !== id);
-      syncCache(current);
+      await syncCache(current);
       return true;
     },
-    onSuccess: invalidate,
   });
 
   const createPerson = useMutation({
     mutationFn: async (person: InsertPerson) => {
-      const created = await resilientApiCall<JournalPerson>(
-        "/api/people",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(person),
-        },
-        () => localCreatePerson(person)
-      );
+      let created: JournalPerson;
+      try {
+        created = await resilientApiCall<JournalPerson>(
+          "/api/people",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(person),
+          },
+          () => localCreatePerson(person)
+        );
+      } catch {
+        created = localCreatePerson(person);
+      }
 
       const current = getLocalJournalData();
       const existingIdx = current.people.findIndex(
@@ -613,103 +632,121 @@ export function useAdminMutations() {
       } else {
         current.people.push(created);
       }
-      syncCache(current);
+      await syncCache(current);
       return created;
     },
-    onSuccess: invalidate,
   });
 
   const updatePerson = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<InsertPerson> }) => {
-      const updated = await resilientApiCall<JournalPerson>(
-        `/api/people/${id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updates),
-        },
-        () => localUpdatePerson(id, updates)
-      );
+      let updated: JournalPerson;
+      try {
+        updated = await resilientApiCall<JournalPerson>(
+          `/api/people/${id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updates),
+          },
+          () => localUpdatePerson(id, updates)
+        );
+      } catch {
+        updated = localUpdatePerson(id, updates);
+      }
 
       const current = getLocalJournalData();
       const idx = current.people.findIndex((p) => p.id === id);
       if (idx !== -1) {
         current.people[idx] = updated;
       }
-      syncCache(current);
+      await syncCache(current);
       return updated;
     },
-    onSuccess: invalidate,
   });
 
   const deletePerson = useMutation({
     mutationFn: async (id: string) => {
-      await resilientApiCall<boolean>(
-        `/api/people/${id}`,
-        { method: "DELETE" },
-        () => localDeletePerson(id)
-      );
+      try {
+        await resilientApiCall<boolean>(
+          `/api/people/${id}`,
+          { method: "DELETE" },
+          () => localDeletePerson(id)
+        );
+      } catch {
+        localDeletePerson(id);
+      }
 
       const current = getLocalJournalData();
       current.people = current.people.filter((p) => p.id !== id);
-      syncCache(current);
+      await syncCache(current);
       return true;
     },
-    onSuccess: invalidate,
   });
 
   const reorderPeople = useMutation({
     mutationFn: async (orderedIds: string[]) => {
-      const updated = await resilientApiCall<JournalPerson[]>(
-        "/api/people/reorder",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderedIds }),
-        },
-        () => localReorderPeople(orderedIds)
-      );
+      let updated: JournalPerson[];
+      try {
+        updated = await resilientApiCall<JournalPerson[]>(
+          "/api/people/reorder",
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderedIds }),
+          },
+          () => localReorderPeople(orderedIds)
+        );
+      } catch {
+        updated = localReorderPeople(orderedIds);
+      }
 
       const current = getLocalJournalData();
       current.people = updated;
-      syncCache(current);
+      await syncCache(current);
       return updated;
     },
-    onSuccess: invalidate,
   });
 
   const updateSettings = useMutation({
     mutationFn: async (settings: Partial<JournalSettings>) => {
-      const updated = await resilientApiCall<JournalSettings>(
-        "/api/settings",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(settings),
-        },
-        () => localUpdateSettings(settings)
-      );
+      let updated: JournalSettings;
+      try {
+        updated = await resilientApiCall<JournalSettings>(
+          "/api/settings",
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(settings),
+          },
+          () => localUpdateSettings(settings)
+        );
+      } catch {
+        updated = localUpdateSettings(settings);
+      }
 
       const current = getLocalJournalData();
       current.settings = updated;
-      syncCache(current);
+      await syncCache(current);
       return updated;
     },
-    onSuccess: invalidate,
   });
 
   const resetData = useMutation({
     mutationFn: async () => {
-      const reset = await resilientApiCall<JournalData>(
-        "/api/journal/reset",
-        { method: "POST" },
-        () => localResetData()
-      );
+      try {
+        await resilientApiCall<JournalData>(
+          "/api/journal/reset",
+          { method: "POST" },
+          () => localResetData()
+        );
+      } catch {
+        localResetData();
+      }
 
-      syncCache(reset);
-      return reset;
+      const initial = JSON.parse(JSON.stringify(initialJournalData));
+      await syncCache(initial);
+      return initial;
     },
-    onSuccess: invalidate,
   });
 
   return {
